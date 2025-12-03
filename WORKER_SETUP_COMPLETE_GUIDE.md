@@ -165,15 +165,37 @@ export default {
 
 ## 3단계: Route 설정
 
-### 3-1. Triggers 탭으로 이동
+### 3-1. Route 설정 위치 찾기
 
-1. Worker 상세 페이지에서 **Triggers** 탭 클릭
-2. 또는 상단 메뉴에서 **Triggers** 선택
+Cloudflare의 UI가 변경되었을 수 있습니다. 다음 위치들을 확인하세요:
+
+**방법 1: Worker 상세 페이지에서 찾기**
+1. Worker 상세 페이지에서 다음 탭들을 확인:
+   - **Triggers** 탭
+   - **Routes** 탭
+   - **Settings** 탭
+   - **Custom domains** 섹션
+
+**방법 2: 상단 메뉴에서 찾기**
+1. Worker 상세 페이지 상단 메뉴 확인:
+   - **Routes** 메뉴
+   - **Triggers** 메뉴
+   - **Settings** 메뉴
+
+**방법 3: Worker 편집 페이지에서 찾기**
+1. Worker 편집 페이지(Edit code)에서:
+   - 우측 사이드바 확인
+   - 또는 상단의 **Routes** 또는 **Triggers** 버튼 확인
+
+**방법 4: 직접 URL로 접근**
+1. 브라우저 주소창에서 Worker 이름 확인
+2. URL 형식: `https://dash.cloudflare.com/[account-id]/workers/services/view/[worker-name]/routes`
+3. 또는 `.../triggers` 경로로 접근 시도
 
 ### 3-2. Routes 섹션 확인
 
-- **Routes** 섹션이 표시됨
-- 현재는 Route가 없을 것입니다
+- **Routes** 섹션을 찾았으면 다음 단계로 진행
+- 만약 찾을 수 없다면, 아래 "Route 설정 대안 방법" 참고
 
 ### 3-3. Route 추가 - Check 프로젝트
 
@@ -218,6 +240,51 @@ Route 목록에서 순서가 다음과 같이 되어 있어야 합니다:
 3. `hyunshu.com/*` (가장 아래, 선택사항)
 
 순서를 변경하려면 Route를 삭제하고 다시 추가하세요.
+
+### 3-7. Route 설정 대안 방법 (Triggers 탭이 없는 경우)
+
+**방법 A: Custom Domains 사용**
+
+1. Worker 상세 페이지에서 **Custom domains** 또는 **Domains** 섹션 찾기
+2. **Add Custom Domain** 또는 **Connect Domain** 클릭
+3. 도메인 입력: `hyunshu.com`
+4. 경로 설정: `/check/*` 또는 `/portfolio/*`
+
+**방법 B: DNS에서 직접 설정**
+
+1. Cloudflare Dashboard > **DNS** 메뉴로 이동
+2. `hyunshu.com` 도메인 선택
+3. **Add record** 클릭
+4. 타입: `CNAME` 또는 `A` 레코드
+5. 이름: `check` (서브도메인인 경우)
+6. 대상: Worker의 서브도메인 (예: `worker-name.your-subdomain.workers.dev`)
+
+**방법 C: Workers & Pages 통합 인터페이스**
+
+1. **Workers & Pages** 메뉴로 이동
+2. 상단에 **Routes** 또는 **Triggers** 탭 확인
+3. 또는 **Add route** 버튼이 상단에 있을 수 있음
+
+**방법 D: Worker 코드에서 직접 처리**
+
+Route 설정 없이 Worker 코드에서 모든 경로를 처리:
+
+```javascript
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    
+    // 모든 요청을 처리 (Route 설정 불필요)
+    if (url.pathname.startsWith('/check')) {
+      // check 프로젝트로 라우팅
+    }
+    // ...
+  }
+}
+```
+
+그리고 Worker를 도메인 전체에 연결:
+- Settings > **Add Custom Domain** > `hyunshu.com` 추가
 
 ---
 
