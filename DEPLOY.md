@@ -48,9 +48,98 @@
    - "Save and Deploy" 클릭
    - 빌드 완료 후 자동으로 배포됩니다
 
-6. **커스텀 도메인 설정 (선택사항)**
-   - "Custom domains" 섹션에서 도메인 추가
+6. **커스텀 도메인 설정**
+
+   **서브도메인으로 배포하는 경우 (예: check.hyunshu.com)**
+   - "Custom domains" 섹션에서 `check.hyunshu.com` 추가
    - DNS 설정은 Cloudflare가 자동으로 처리합니다
+
+   **서브디렉토리로 배포하는 경우 (예: hyunshu.com/check) ⭐**
+   
+   `hyunshu.com/check`에 아무것도 없다면, **가장 간단한 방법**은 Cloudflare Pages에 직접 커스텀 도메인을 추가하는 것입니다!
+   
+   **방법 1: 직접 커스텀 도메인 추가 (가장 간단) ⭐ 권장**
+   
+   `hyunshu.com`에 다른 사이트가 없고 `/check` 경로만 사용한다면:
+   
+   1. **Cloudflare Pages 프로젝트 배포**
+      - 빌드 설정 완료 후 배포
+   
+   2. **커스텀 도메인 추가**
+      - Pages 프로젝트 > **Custom domains** 섹션
+      - **Set up a custom domain** 클릭
+      - 도메인 입력: `hyunshu.com`
+      - Cloudflare가 자동으로 DNS 설정
+   
+   3. **완료!**
+      - `https://hyunshu.com/check`로 접속하면 자동으로 작동합니다
+      - `base: '/check/'` 설정 덕분에 `/check` 경로에서 정상 작동
+   
+   **방법 2: Cloudflare Workers 사용 (hyunshu.com에 다른 사이트가 있는 경우)**
+   
+   `hyunshu.com` 루트에 다른 사이트가 있고 `/check`만 이 프로젝트를 사용한다면:
+   
+   1. **Cloudflare Pages에서 프로젝트 배포**
+      - 배포 후 받은 Pages URL 기록 (예: `beta-classroom-monitor.pages.dev`)
+   
+   2. **Cloudflare Workers 생성**
+      - Cloudflare Dashboard > **Workers & Pages** > **Create application** > **Worker**
+      - Worker 이름: `hyunshu-routing`
+      - "Deploy" 클릭
+   
+   3. **Worker 코드 작성**
+      - 생성된 Worker의 "Edit code" 클릭
+      - 다음 코드로 교체 (실제 Pages URL로 변경 필요):
+      
+      ```javascript
+      export default {
+        async fetch(request, env) {
+          const url = new URL(request.url);
+          
+          // /check 경로로 시작하는 요청을 Pages로 라우팅
+          if (url.pathname.startsWith('/check')) {
+            // 실제 Pages 배포 URL로 변경하세요!
+            const pagesUrl = 'https://beta-classroom-monitor.pages.dev';
+            
+            const targetUrl = new URL(request.url);
+            targetUrl.hostname = new URL(pagesUrl).hostname;
+            targetUrl.pathname = url.pathname; // /check 경로 유지
+            
+            return fetch(targetUrl, {
+              method: request.method,
+              headers: request.headers,
+              body: request.body,
+            });
+          }
+          
+          // /check가 아닌 다른 경로는 기존 사이트로 라우팅
+          return fetch(request);
+        }
+      }
+      ```
+   
+   4. **Worker를 도메인에 연결**
+      - Worker 페이지 > **Triggers** 탭
+      - **Routes** 섹션 > **Add route**
+      - Route: `hyunshu.com/check/*`
+      - Zone: `hyunshu.com` 선택
+      - **Save** 클릭
+   
+   **방법 3: Page Rules 사용 (리다이렉트만 가능)**
+   
+   Page Rules는 프록시가 아닌 리다이렉트만 가능하므로 권장하지 않습니다. 하지만 간단한 리다이렉트가 필요하다면:
+   
+   1. Cloudflare Dashboard > **Rules** > **Page Rules**
+   2. **Create Page Rule** 클릭
+   3. URL 패턴: `hyunshu.com/check/*`
+   4. 설정: **Forwarding URL** (301 또는 302)
+   5. Destination URL: `https://beta-classroom-monitor.pages.dev$1`
+   
+   ⚠️ **주의**: Page Rules는 리다이렉트만 가능하므로, URL이 변경되어 표시됩니다.
+   
+   **참고**: 
+   - 현재 프로젝트는 `base: '/check/'`로 설정되어 있어, 이미 서브디렉토리 배포를 위한 설정이 완료되어 있습니다.
+   - `hyunshu.com`에 다른 사이트가 없다면 **방법 1**이 가장 간단합니다!
 
 ### 방법 2: GitHub Actions를 통한 자동 배포
 
