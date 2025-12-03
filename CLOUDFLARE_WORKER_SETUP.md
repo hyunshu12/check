@@ -34,26 +34,37 @@
 ```javascript
 export default {
   async fetch(request, env) {
-    const url = new URL(request.url);
-    
-    // /check 경로로 시작하는 요청을 Pages로 라우팅
-    if (url.pathname.startsWith('/check')) {
-      // ⚠️ 실제 Pages 배포 URL로 변경하세요!
-      const pagesUrl = 'https://beta-classroom-monitor.pages.dev';
+    try {
+      const url = new URL(request.url);
       
-      const targetUrl = new URL(request.url);
-      targetUrl.hostname = new URL(pagesUrl).hostname;
-      targetUrl.pathname = url.pathname; // /check 경로 유지
+      // /check 경로로 시작하는 요청을 Pages로 라우팅
+      if (url.pathname.startsWith('/check')) {
+        // ⚠️ 실제 Pages 배포 URL로 변경하세요!
+        const pagesUrl = 'https://beta-classroom-monitor.pages.dev';
+        
+        const targetUrl = new URL(request.url);
+        targetUrl.hostname = new URL(pagesUrl).hostname;
+        targetUrl.pathname = url.pathname; // /check 경로 유지
+        
+        return fetch(targetUrl, {
+          method: request.method,
+          headers: request.headers,
+          body: request.body,
+        });
+      }
       
-      return fetch(targetUrl, {
-        method: request.method,
-        headers: request.headers,
-        body: request.body,
+      // /check가 아닌 다른 경로는 기존 사이트로 라우팅
+      return fetch(request);
+    } catch (error) {
+      // 에러 발생 시 500 에러 반환
+      return new Response('Internal Server Error', {
+        status: 500,
+        statusText: 'Worker Error',
+        headers: {
+          'Content-Type': 'text/plain',
+        },
       });
     }
-    
-    // /check가 아닌 다른 경로는 기존 사이트로 라우팅
-    return fetch(request);
   }
 }
 ```
@@ -68,6 +79,9 @@ export default {
 3. 다음 정보 입력:
    - **Route**: `hyunshu.com/check/*`
    - **Zone**: `hyunshu.com` 선택
+   - **Fail open**: ✅ 체크 (권장)
+     - **Fail open (체크)**: Worker가 실패하면 원본 요청을 그대로 전달 (fallback)
+     - **Fail closed (체크 해제)**: Worker가 실패하면 500 에러 반환
 4. **Add route** 클릭하여 저장
 
 ### 5단계: 확인
@@ -107,11 +121,28 @@ export default {
 - Worker 코드의 마지막 부분 `return fetch(request);`가 올바르게 설정되어 있는지 확인
 - 기존 사이트의 URL이 올바른지 확인
 
+## Fail Mode 설정
+
+Cloudflare Worker의 **Fail Mode**는 Worker가 실패했을 때 어떻게 처리할지 결정합니다:
+
+### Fail Open (권장) ✅
+- Worker가 실패하면 원본 요청을 그대로 전달 (fallback)
+- 기존 사이트가 계속 작동할 수 있도록 보장
+- Route 설정에서 "Fail open" 옵션을 체크
+
+### Fail Closed
+- Worker가 실패하면 500 에러 반환
+- Worker가 완전히 제어하는 경우에 사용
+- Route 설정에서 "Fail open" 옵션을 체크 해제
+
+**권장 설정**: Fail Open을 사용하여 Worker 오류 시에도 기존 사이트가 작동하도록 합니다.
+
 ## 참고 사항
 
 - Worker는 무료 플랜에서도 사용 가능합니다 (일일 요청 제한: 100,000건)
 - Worker는 전 세계에 배포되어 빠른 응답 속도를 제공합니다
 - Route는 와일드카드(`*`)를 사용하여 `/check` 하위의 모든 경로를 포함합니다
+- Worker 코드에 try-catch를 추가하여 에러 핸들링을 구현했습니다
 
 ## 추가 리소스
 

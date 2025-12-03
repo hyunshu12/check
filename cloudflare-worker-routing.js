@@ -13,34 +13,45 @@
 
 export default {
   async fetch(request, env) {
-    const url = new URL(request.url);
-    
-    // /check 경로로 시작하는 요청을 Pages로 라우팅
-    if (url.pathname.startsWith('/check')) {
-      // Pages 프로젝트의 배포 URL (실제 배포 후 변경 필요)
-      const pagesUrl = 'https://beta-classroom-monitor.pages.dev';
+    try {
+      const url = new URL(request.url);
       
-      // 요청 URL을 Pages URL로 변환
-      const targetUrl = new URL(request.url);
-      targetUrl.hostname = new URL(pagesUrl).hostname;
+      // /check 경로로 시작하는 요청을 Pages로 라우팅
+      if (url.pathname.startsWith('/check')) {
+        // Pages 프로젝트의 배포 URL (실제 배포 후 변경 필요)
+        const pagesUrl = 'https://beta-classroom-monitor.pages.dev';
+        
+        // 요청 URL을 Pages URL로 변환
+        const targetUrl = new URL(request.url);
+        targetUrl.hostname = new URL(pagesUrl).hostname;
+        
+        // /check를 제거하고 Pages의 루트 경로로 매핑
+        // (base: '/check/' 설정이 이미 되어 있으므로 경로는 그대로 유지)
+        targetUrl.pathname = url.pathname;
+        
+        // 요청을 Pages로 프록시
+        const response = await fetch(targetUrl, {
+          method: request.method,
+          headers: request.headers,
+          body: request.body,
+        });
+        
+        return response;
+      }
       
-      // /check를 제거하고 Pages의 루트 경로로 매핑
-      // (base: '/check/' 설정이 이미 되어 있으므로 경로는 그대로 유지)
-      targetUrl.pathname = url.pathname;
-      
-      // 요청을 Pages로 프록시
-      const response = await fetch(targetUrl, {
-        method: request.method,
-        headers: request.headers,
-        body: request.body,
+      // /check가 아닌 다른 경로는 기존 사이트로 라우팅
+      // (기존 사이트가 있다면 해당 URL로 변경)
+      return fetch(request);
+    } catch (error) {
+      // 에러 발생 시 500 에러 반환
+      return new Response('Internal Server Error', {
+        status: 500,
+        statusText: 'Worker Error',
+        headers: {
+          'Content-Type': 'text/plain',
+        },
       });
-      
-      return response;
     }
-    
-    // /check가 아닌 다른 경로는 기존 사이트로 라우팅
-    // (기존 사이트가 있다면 해당 URL로 변경)
-    return fetch(request);
   }
 }
 
