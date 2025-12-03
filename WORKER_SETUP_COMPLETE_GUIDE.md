@@ -43,20 +43,34 @@
 1. 왼쪽 사이드바에서 **Workers & Pages** 클릭
 2. 상단에 "Workers & Pages" 메뉴가 표시됨
 
-### 1-3. Worker 생성
+### 1-3. Worker 생성 방법 선택
+
+**방법 A: Hello World로 시작 (권장) ⭐**
 
 1. **Create application** 버튼 클릭 (우측 상단 또는 중앙)
 2. **Worker** 선택 (Pages가 아닌 Worker)
-3. Worker 이름 입력:
+3. **"Create from template"** 또는 **"Create Worker"** 선택
+4. **"Hello World"** 템플릿 선택 (기본값)
+5. Worker 이름 입력:
    - 예: `hyunshu-routing` 또는 `domain-routing`
    - 이름은 나중에 변경 가능
-4. **Deploy** 버튼 클릭
-5. 기본 Worker가 생성되고 배포됨
+6. **Deploy** 버튼 클릭
+7. 기본 "Hello World" Worker가 생성되고 배포됨
+
+**방법 B: Git으로 시작 (고급)**
+
+1. **Create application** > **Worker**
+2. **"Connect to Git"** 선택
+3. GitHub 저장소 연결
+4. 자동 배포 설정
+
+⚠️ **권장**: 처음 시작할 때는 **방법 A (Hello World)**를 사용하는 것이 더 간단합니다.
 
 ### 1-4. Worker 확인
 
 - 생성된 Worker가 목록에 표시됨
 - 상태가 "Active"로 표시되어야 함
+- 기본 "Hello World" 코드가 들어있을 것입니다
 
 ---
 
@@ -70,6 +84,8 @@
 
 ### 2-2. 기본 코드 확인
 
+**Hello World 템플릿으로 시작한 경우:**
+
 기본적으로 다음과 같은 코드가 있을 것입니다:
 
 ```javascript
@@ -79,6 +95,18 @@ export default {
   }
 }
 ```
+
+또는 더 간단한 버전:
+
+```javascript
+export default {
+  async fetch(request) {
+    return new Response("Hello World!");
+  }
+}
+```
+
+이 코드를 모두 삭제하고 아래 코드로 교체하면 됩니다.
 
 ### 2-3. 코드 교체
 
