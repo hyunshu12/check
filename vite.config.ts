@@ -10,9 +10,7 @@ export default defineConfig({
   preview: {
     port: 4173,
     host: true,
-    base: '/check/',
   },
-  base: '/check/',
   build: {
     outDir: 'dist',
     sourcemap: false,
