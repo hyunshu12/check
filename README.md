@@ -30,15 +30,20 @@
 # 의존성 설치
 npm install
 
-# 개발 서버 실행
+# 개발 서버 실행 (http://localhost:5173/check/)
 npm run dev
 
 # 프로덕션 빌드
 npm run build
 
-# 빌드 결과 미리보기
+# 빌드 결과 미리보기 (http://localhost:4173/check/)
 npm run preview
 ```
+
+**⚠️ 중요**: 
+- 빌드된 `dist/index.html` 파일을 직접 열면 작동하지 않습니다 (경로 문제)
+- 반드시 `npm run preview` 명령어를 사용하여 미리보기를 확인하세요
+- 또는 Cloudflare Pages에 배포하여 실제 환경에서 테스트하세요
 
 ## Cloudflare Pages 배포
 
@@ -106,4 +111,3 @@ check/
 ## 라이선스
 
 Private - 개인 프로젝트
-# check

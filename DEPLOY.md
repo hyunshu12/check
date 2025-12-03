@@ -58,7 +58,12 @@
    
    `hyunshu.com/check`에 아무것도 없다면, **가장 간단한 방법**은 Cloudflare Pages에 직접 커스텀 도메인을 추가하는 것입니다!
    
-   **방법 1: 직접 커스텀 도메인 추가 (가장 간단) ⭐ 권장**
+   **방법 1: 직접 커스텀 도메인 추가 (가장 간단) ⭐**
+   
+   ⚠️ **주의**: `hyunshu.com`이 이미 다른 Cloudflare Pages 프로젝트에 연결되어 있다면 이 방법은 사용할 수 없습니다. 
+   오류 메시지: "That domain is already associated with an existing project"
+   
+   이 경우 **방법 2 (Cloudflare Workers)**를 사용하세요!
    
    `hyunshu.com`에 다른 사이트가 없고 `/check` 경로만 사용한다면:
    
@@ -75,9 +80,9 @@
       - `https://hyunshu.com/check`로 접속하면 자동으로 작동합니다
       - `base: '/check/'` 설정 덕분에 `/check` 경로에서 정상 작동
    
-   **방법 2: Cloudflare Workers 사용 (hyunshu.com에 다른 사이트가 있는 경우)**
+   **방법 2: Cloudflare Workers 사용 ⭐ 권장 (도메인이 이미 사용 중인 경우)**
    
-   `hyunshu.com` 루트에 다른 사이트가 있고 `/check`만 이 프로젝트를 사용한다면:
+   `hyunshu.com`이 이미 다른 Cloudflare Pages 프로젝트에 연결되어 있거나, 루트에 다른 사이트가 있는 경우:
    
    1. **Cloudflare Pages에서 프로젝트 배포**
       - 배포 후 받은 Pages URL 기록 (예: `beta-classroom-monitor.pages.dev`)

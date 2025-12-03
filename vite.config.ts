@@ -7,6 +7,12 @@ export default defineConfig({
     port: 5173,
     host: true
   },
+  preview: {
+    port: 4173,
+    host: true,
+    // preview 서버에서도 base 경로를 올바르게 처리
+    base: '/check/',
+  },
   base: '/check/',
   build: {
     outDir: 'dist',
