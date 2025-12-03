@@ -12,9 +12,7 @@ export default defineConfig({
     host: true,
     base: '/check/',
   },
-  // Cloudflare Pages 루트 배포를 위해 일단 '/'로 설정
-  // 나중에 Worker로 /check 경로 배포 시 '/check/'로 변경 필요
-  base: '/',
+  base: '/check/',
   build: {
     outDir: 'dist',
     sourcemap: false,
@@ -32,4 +30,3 @@ export default defineConfig({
     include: ['react', 'react-dom'],
   },
 });
-

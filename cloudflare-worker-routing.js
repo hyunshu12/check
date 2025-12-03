@@ -25,8 +25,9 @@ export default {
         const targetUrl = new URL(request.url);
         targetUrl.hostname = new URL(pagesUrl).hostname;
         
-        // /check를 제거하고 Pages의 루트 경로로 매핑
-        // (base: '/check/' 설정이 이미 되어 있으므로 경로는 그대로 유지)
+        // 경로 처리: /check로 시작하는 경로를 Pages의 /check 경로로 매핑
+        // 예: hyunshu.com/check -> pages.dev/check
+        // 예: hyunshu.com/check/assets/... -> pages.dev/check/assets/...
         targetUrl.pathname = url.pathname;
         
         // 요청을 Pages로 프록시
@@ -35,6 +36,15 @@ export default {
           headers: request.headers,
           body: request.body,
         });
+        
+        // 404 에러인 경우 디버깅 정보 추가
+        if (response.status === 404) {
+          console.log('404 Error:', {
+            originalPath: url.pathname,
+            targetPath: targetUrl.pathname,
+            targetUrl: targetUrl.toString(),
+          });
+        }
         
         return response;
       }
