@@ -10,10 +10,11 @@ export default defineConfig({
   preview: {
     port: 4173,
     host: true,
-    // preview 서버에서도 base 경로를 올바르게 처리
     base: '/check/',
   },
-  base: '/check/',
+  // Cloudflare Pages 루트 배포를 위해 일단 '/'로 설정
+  // 나중에 Worker로 /check 경로 배포 시 '/check/'로 변경 필요
+  base: '/',
   build: {
     outDir: 'dist',
     sourcemap: false,
