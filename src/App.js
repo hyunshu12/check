@@ -79,8 +79,9 @@ export default function App() {
         const overlayHeight = OVERLAY_SIZE;
         const viewportWidth = window.innerWidth;
         const viewportHeight = window.innerHeight;
-        const baseTop = rect.top + window.scrollY + rect.height / 2 - overlayHeight / 2;
-        const baseLeft = rect.left + window.scrollX + rect.width / 2 - overlayWidth / 2;
+        // getBoundingClientRect()는 이미 뷰포트 기준 좌표를 반환하므로 스크롤 오프셋을 더하지 않음
+        const baseTop = rect.top + rect.height / 2 - overlayHeight / 2;
+        const baseLeft = rect.left + rect.width / 2 - overlayWidth / 2;
         const clampedTop = clamp(baseTop, margin, Math.max(margin, viewportHeight - overlayHeight - margin));
         const clampedLeft = clamp(baseLeft, margin, Math.max(margin, viewportWidth - overlayWidth - margin));
         setSelectedStudent(student);
@@ -148,5 +149,15 @@ export default function App() {
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [selectedStudent, closeOverlay]);
+    // 모달이 열려있을 때 body 스크롤 방지
+    useEffect(() => {
+        if (!selectedStudent)
+            return;
+        const originalStyle = window.getComputedStyle(document.body).overflow;
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = originalStyle;
+        };
+    }, [selectedStudent]);
     return (_jsxs("div", { id: "app", children: [_jsx(TopBar, { banner: bannerConfig, now: now, currentSlot: currentSlot ?? undefined, progress: slotProgress }), _jsxs("main", { className: "dashboard", "aria-label": "\uAD50\uC2E4 \uBAA8\uB2C8\uD130\uB9C1 \uB300\uC2DC\uBCF4\uB4DC", children: [_jsx("section", { className: "dashboard-main", children: _jsx(SeatGrid, { students: students, movementMap: movementMap, onSelect: handleSeatSelect, total: totalStudents, present: presentCount, absent: absentCount }) }), _jsxs("aside", { className: "dashboard-side", children: [_jsx(MovementPanel, { movementMap: movementMap, students: students, mainLocations: mainLocations, extraLocations: extraLocations }), _jsx(Gallery, { images: galleryImages, intervalMs: galleryIntervalMs })] })] }), _jsx(MovementOverlay, { ref: overlayRef, student: selectedStudent, position: overlayPosition, mainLocations: mainLocationsForOverlay, onSelect: handleLocationSelect }), _jsx(MovementExtraPanel, { ref: extraRef, open: Boolean(selectedStudent && isExtraOpen), position: extraPosition, extraLocations: extraLocations, onSelect: handleExtraLocationSelect }), _jsx("button", { type: "button", className: "reset-button", onClick: handleResetMovement, "aria-label": "\uC774\uB3D9\uD55C \uD559\uC0DD\uB4E4\uC744 \uCD08\uAE30\uD654", children: "\uCD08\uAE30\uD654" })] }));
 }

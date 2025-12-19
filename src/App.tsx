@@ -105,8 +105,9 @@ export default function App() {
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
 
-    const baseTop = rect.top + window.scrollY + rect.height / 2 - overlayHeight / 2;
-    const baseLeft = rect.left + window.scrollX + rect.width / 2 - overlayWidth / 2;
+    // getBoundingClientRect()는 이미 뷰포트 기준 좌표를 반환하므로 스크롤 오프셋을 더하지 않음
+    const baseTop = rect.top + rect.height / 2 - overlayHeight / 2;
+    const baseLeft = rect.left + rect.width / 2 - overlayWidth / 2;
 
     const clampedTop = clamp(baseTop, margin, Math.max(margin, viewportHeight - overlayHeight - margin));
     const clampedLeft = clamp(baseLeft, margin, Math.max(margin, viewportWidth - overlayWidth - margin));
@@ -182,6 +183,18 @@ export default function App() {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [selectedStudent, closeOverlay]);
+
+  // 모달이 열려있을 때 body 스크롤 방지
+  useEffect(() => {
+    if (!selectedStudent) return;
+
+    const originalStyle = window.getComputedStyle(document.body).overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = originalStyle;
+    };
+  }, [selectedStudent]);
 
   return (
     <div id="app">
