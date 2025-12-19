@@ -1,6 +1,9 @@
 /**
  * Cloudflare Worker + Static Assets
  * check.hyunshu.com 서브도메인의 정적 파일을 서빙합니다.
+ * 
+ * 참고: Cloudflare Pages를 사용하는 경우 이 파일은 필요하지 않습니다.
+ * Pages는 자동으로 SPA 라우팅을 지원합니다.
  */
 
 interface Env {
@@ -47,5 +50,5 @@ export default {
       });
     }
   },
-} satisfies ExportedHandler<Env>;
+};
 
