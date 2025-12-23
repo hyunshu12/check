@@ -282,3 +282,5 @@ VITE_CLASSROOMS_EXTRA=보건실,과학실,201호
 **작성일:** 2025-01-03  
 **대상:** Cloudflare Pages를 사용한 정적 사이트 배포
 
+
+
