@@ -10,6 +10,7 @@ const parseList = (value: string | undefined) =>
 
 const defaultMain = ['305호', '301호', '체육관', '화장실', '세미나실', '외출', '기타', '복귀', '조기입실'];
 const defaultExtra = [
+  '기숙사',
   '급식실',
   '보건실',
   '과학실',
@@ -44,6 +45,7 @@ const defaultExtra = [
   '금요귀가',
   '복도',
   '아이맥실',
+  '체육관',
 ];
 
 export const defaultClassrooms: ClassroomSettings = {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Gallery } from './components/Gallery';
 import { MovementOverlay, MovementExtraPanel } from './components/MovementOverlay';
@@ -92,22 +92,21 @@ export default function App() {
     } satisfies OverlayPosition;
   }, [overlayPosition]);
 
-  const closeOverlay = useCallback(() => {
+  const closeOverlay = () => {
     setSelectedStudent(null);
     setOverlayPosition(null);
     setExtraOpen(false);
-  }, []);
+  };
 
-  const handleSeatSelect = useCallback((student: Student, rect: DOMRect) => {
+  const handleSeatSelect = (student: Student, rect: DOMRect) => {
     const margin = VIEWPORT_MARGIN;
     const overlayWidth = OVERLAY_SIZE;
     const overlayHeight = OVERLAY_SIZE;
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
 
-    // getBoundingClientRect()는 이미 뷰포트 기준 좌표를 반환하므로 스크롤 오프셋을 더하지 않음
-    const baseTop = rect.top + rect.height / 2 - overlayHeight / 2;
-    const baseLeft = rect.left + rect.width / 2 - overlayWidth / 2;
+    const baseTop = rect.top + window.scrollY + rect.height / 2 - overlayHeight / 2;
+    const baseLeft = rect.left + window.scrollX + rect.width / 2 - overlayWidth / 2;
 
     const clampedTop = clamp(baseTop, margin, Math.max(margin, viewportHeight - overlayHeight - margin));
     const clampedLeft = clamp(baseLeft, margin, Math.max(margin, viewportWidth - overlayWidth - margin));
@@ -115,9 +114,9 @@ export default function App() {
     setSelectedStudent(student);
     setOverlayPosition({ top: clampedTop, left: clampedLeft });
     setExtraOpen(false);
-  }, []);
+  };
 
-  const applyMovement = useCallback((student: Student, location: string) => {
+  const applyMovement = (student: Student, location: string) => {
     if (location === '복귀') {
       setMovementMap((prev) => upsertMovement(prev, student.hakbun, null));
       closeOverlay();
@@ -130,23 +129,23 @@ export default function App() {
 
     setMovementMap((prev) => upsertMovement(prev, student.hakbun, record));
     closeOverlay();
-  }, [closeOverlay, setMovementMap]);
+  };
 
-  const handleLocationSelect = useCallback((location: string) => {
+  const handleLocationSelect = (location: string) => {
     if (!selectedStudent) return;
     if (location === '기타') {
       setExtraOpen(true);
       return;
     }
     applyMovement(selectedStudent, location);
-  }, [selectedStudent, applyMovement]);
+  };
 
-  const handleExtraLocationSelect = useCallback((location: string) => {
+  const handleExtraLocationSelect = (location: string) => {
     if (!selectedStudent) return;
     applyMovement(selectedStudent, location);
-  }, [selectedStudent, applyMovement]);
+  };
 
-  const handleResetMovement = useCallback(() => {
+  const handleResetMovement = () => {
     const shouldReset = window.confirm('초기화 하겠습니까?');
     if (!shouldReset) {
       return;
@@ -154,7 +153,7 @@ export default function App() {
 
     setMovementMap({});
     closeOverlay();
-  }, [closeOverlay, setMovementMap]);
+  };
 
   useEffect(() => {
     if (!selectedStudent) return;
@@ -169,7 +168,7 @@ export default function App() {
 
     document.addEventListener('mousedown', handleMouseDown);
     return () => document.removeEventListener('mousedown', handleMouseDown);
-  }, [selectedStudent, closeOverlay]);
+  }, [selectedStudent]);
 
   useEffect(() => {
     if (!selectedStudent) return;
@@ -182,18 +181,6 @@ export default function App() {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [selectedStudent, closeOverlay]);
-
-  // 모달이 열려있을 때 body 스크롤 방지
-  useEffect(() => {
-    if (!selectedStudent) return;
-
-    const originalStyle = window.getComputedStyle(document.body).overflow;
-    document.body.style.overflow = 'hidden';
-
-    return () => {
-      document.body.style.overflow = originalStyle;
-    };
   }, [selectedStudent]);
 
   return (
