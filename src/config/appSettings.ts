@@ -7,7 +7,7 @@ const toNumber = (value: string | undefined) => {
 };
 
 const totalFromEnv = toNumber(import.meta.env.VITE_TOTAL_STUDENTS);
-export const TOTAL_STUDENTS = totalFromEnv ?? 29;
+export const TOTAL_STUDENTS = totalFromEnv ?? 28;
 export const GHOST_STUDENT_HAKBUN = '1115';
 export const SPECIAL_STUDENTS = ['장세혁', '조현수', '조경윤'];
 
