@@ -69,6 +69,7 @@ export function SeatGrid({ students, movementMap, onSelect, total, present, abse
               key={student.hakbun}
               className={`seat ${moved ? 'moved' : ''} ${special ? 'special' : ''}`.trim()}
               data-row={row}
+              data-hakbun={student.hakbun}
               type="button"
               onClick={handleClick}
             >

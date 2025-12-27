@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 
 import { MovementMap, Student } from '../types';
 
@@ -9,7 +9,7 @@ interface MovementPanelProps {
   extraLocations: string[];
 }
 
-export function MovementPanel({ movementMap, students, mainLocations, extraLocations }: MovementPanelProps) {
+export const MovementPanel = memo(function MovementPanel({ movementMap, students, mainLocations, extraLocations }: MovementPanelProps) {
   const studentMap = useMemo(() => {
     const entries = new Map<string, Student>();
     students.forEach((student) => entries.set(student.hakbun, student));
@@ -36,22 +36,26 @@ export function MovementPanel({ movementMap, students, mainLocations, extraLocat
     return result;
   }, [extraLocations, movementMap, studentMap]);
 
-  const orderedGroupKeys: string[] = [];
+  const orderedGroupKeys = useMemo(() => {
+    const keys: string[] = [];
 
-  mainLocations.forEach((location) => {
-    if (location === '기타') return;
-    if (groups.has(location)) {
-      orderedGroupKeys.push(location);
+    mainLocations.forEach((location) => {
+      if (location === '기타') return;
+      if (groups.has(location)) {
+        keys.push(location);
+      }
+    });
+
+    const otherGroups = Array.from(groups.keys()).filter((key) => key !== '기타' && !mainLocations.includes(key));
+    otherGroups.sort();
+    keys.push(...otherGroups);
+
+    if (groups.has('기타')) {
+      keys.push('기타');
     }
-  });
 
-  const otherGroups = Array.from(groups.keys()).filter((key) => key !== '기타' && !mainLocations.includes(key));
-  otherGroups.sort();
-  orderedGroupKeys.push(...otherGroups);
-
-  if (groups.has('기타')) {
-    orderedGroupKeys.push('기타');
-  }
+    return keys;
+  }, [groups, mainLocations]);
 
   return (
     <section className="card movement-card" aria-labelledby="movement-title">
@@ -99,6 +103,6 @@ export function MovementPanel({ movementMap, students, mainLocations, extraLocat
       )}
     </section>
   );
-}
+});
 
 

@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Gallery } from './components/Gallery';
 import { MovementOverlay, MovementExtraPanel } from './components/MovementOverlay';
 import { MovementPanel } from './components/MovementPanel';
+import { SearchFilter } from './components/SearchFilter';
 import { SeatGrid } from './components/SeatGrid';
+import { StatsDashboard } from './components/StatsDashboard';
 import { TopBar } from './components/TopBar';
 import { bannerConfig, galleryImages, galleryIntervalMs, GHOST_STUDENT_HAKBUN, TOTAL_STUDENTS } from './config/appSettings';
 import { classroomSettings } from './config/classrooms';
@@ -92,13 +94,13 @@ export default function App() {
     } satisfies OverlayPosition;
   }, [overlayPosition]);
 
-  const closeOverlay = () => {
+  const closeOverlay = useCallback(() => {
     setSelectedStudent(null);
     setOverlayPosition(null);
     setExtraOpen(false);
-  };
+  }, []);
 
-  const handleSeatSelect = (student: Student, rect: DOMRect) => {
+  const handleSeatSelect = useCallback((student: Student, rect: DOMRect) => {
     const margin = VIEWPORT_MARGIN;
     const overlayWidth = OVERLAY_SIZE;
     const overlayHeight = OVERLAY_SIZE;
@@ -114,9 +116,28 @@ export default function App() {
     setSelectedStudent(student);
     setOverlayPosition({ top: clampedTop, left: clampedLeft });
     setExtraOpen(false);
-  };
+  }, []);
 
-  const applyMovement = (student: Student, location: string) => {
+  const handleSearchStudentSelect = useCallback((student: Student) => {
+    // 검색에서 학생 선택 시 좌석 위치를 찾아서 오버레이 표시
+    const seatElement = document.querySelector(`[data-hakbun="${student.hakbun}"]`) as HTMLElement;
+    if (seatElement) {
+      const rect = seatElement.getBoundingClientRect();
+      handleSeatSelect(student, rect);
+    } else {
+      // 좌석을 찾을 수 없으면 화면 중앙에 표시
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      setSelectedStudent(student);
+      setOverlayPosition({
+        top: viewportHeight / 2 - OVERLAY_SIZE / 2,
+        left: viewportWidth / 2 - OVERLAY_SIZE / 2
+      });
+      setExtraOpen(false);
+    }
+  }, [handleSeatSelect]);
+
+  const applyMovement = useCallback((student: Student, location: string) => {
     if (location === '복귀') {
       setMovementMap((prev) => upsertMovement(prev, student.hakbun, null));
       closeOverlay();
@@ -124,28 +145,29 @@ export default function App() {
     }
 
     const record: MovementRecord = {
-      location
+      location,
+      timestamp: Date.now() // 이동 시작 시간 기록
     };
 
     setMovementMap((prev) => upsertMovement(prev, student.hakbun, record));
     closeOverlay();
-  };
+  }, [closeOverlay]);
 
-  const handleLocationSelect = (location: string) => {
+  const handleLocationSelect = useCallback((location: string) => {
     if (!selectedStudent) return;
     if (location === '기타') {
       setExtraOpen(true);
       return;
     }
     applyMovement(selectedStudent, location);
-  };
+  }, [selectedStudent, applyMovement]);
 
-  const handleExtraLocationSelect = (location: string) => {
+  const handleExtraLocationSelect = useCallback((location: string) => {
     if (!selectedStudent) return;
     applyMovement(selectedStudent, location);
-  };
+  }, [selectedStudent, applyMovement]);
 
-  const handleResetMovement = () => {
+  const handleResetMovement = useCallback(() => {
     const shouldReset = window.confirm('초기화 하겠습니까?');
     if (!shouldReset) {
       return;
@@ -153,7 +175,7 @@ export default function App() {
 
     setMovementMap({});
     closeOverlay();
-  };
+  }, [closeOverlay]);
 
   useEffect(() => {
     if (!selectedStudent) return;
@@ -168,7 +190,7 @@ export default function App() {
 
     document.addEventListener('mousedown', handleMouseDown);
     return () => document.removeEventListener('mousedown', handleMouseDown);
-  }, [selectedStudent]);
+  }, [selectedStudent, closeOverlay]);
 
   useEffect(() => {
     if (!selectedStudent) return;
@@ -181,7 +203,7 @@ export default function App() {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [selectedStudent]);
+  }, [selectedStudent, closeOverlay]);
 
   return (
     <div id="app">
@@ -207,6 +229,16 @@ export default function App() {
             extraLocations={extraLocations}
           />
           <Gallery images={galleryImages} intervalMs={galleryIntervalMs} />
+          <SearchFilter
+            students={students}
+            movementMap={movementMap}
+            onStudentSelect={handleSearchStudentSelect}
+          />
+          <StatsDashboard
+            movementMap={movementMap}
+            students={students}
+            totalStudents={totalStudents}
+          />
         </aside>
       </main>
 

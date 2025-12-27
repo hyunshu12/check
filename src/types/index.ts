@@ -5,6 +5,7 @@ export interface Student {
 
 export interface MovementRecord {
   location: string;
+  timestamp?: number; // 이동 시작 시간 (밀리초)
 }
 
 export type MovementMap = Record<string, MovementRecord>;
