@@ -46,7 +46,7 @@ export const StatsDashboard = memo(function StatsDashboard({ movementMap, studen
 
   // 전체 통계
   const stats = useMemo(() => {
-    const movedCount = Object.values(movementMap).filter((r) => r?.location).length;
+    const movedCount = students.reduce((count, student) => count + (movementMap[student.hakbun]?.location ? 1 : 0), 0);
     const presentCount = totalStudents - movedCount;
     const movedPercentage = totalStudents > 0 ? (movedCount / totalStudents) * 100 : 0;
     const presentPercentage = totalStudents > 0 ? (presentCount / totalStudents) * 100 : 0;
@@ -73,7 +73,7 @@ export const StatsDashboard = memo(function StatsDashboard({ movementMap, studen
       topLocation: locationStats[0]?.location || null,
       topLocationCount: locationStats[0]?.count || 0,
     };
-  }, [movementMap, totalStudents, locationStats]);
+  }, [movementMap, totalStudents, locationStats, students]);
 
   // 시간대별 통계 (현재 시간 기준)
   const timeStats = useMemo(() => {

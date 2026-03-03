@@ -1,6 +1,5 @@
 import { MouseEvent } from 'react';
 
-import { SPECIAL_STUDENTS, GHOST_STUDENT_HAKBUN } from '../config/appSettings';
 import { Student, MovementMap } from '../types';
 
 interface SeatGridProps {
@@ -13,16 +12,6 @@ interface SeatGridProps {
 }
 
 export function SeatGrid({ students, movementMap, onSelect, total, present, absent }: SeatGridProps) {
-  const activeStudents = students.filter((student) => student.hakbun !== GHOST_STUDENT_HAKBUN);
-  const layout: Array<Student | null> = [];
-
-  activeStudents.forEach((student, index) => {
-    layout.push(student);
-    if (index === 13) {
-      layout.push(null);
-    }
-  });
-
   return (
     <section className="card seat-card" aria-labelledby="seats-title">
       <header className="card-header seat-header">
@@ -48,16 +37,10 @@ export function SeatGrid({ students, movementMap, onSelect, total, present, abse
         </div>
       </header>
       <div className="seat-grid">
-        {layout.map((student, index) => {
+        {students.map((student, index) => {
           const row = Math.floor(index / 6);
-
-          if (!student) {
-            return <div key={`empty-${index}`} className="seat empty" aria-hidden="true" />;
-          }
-
           const movement = movementMap[student.hakbun];
           const moved = Boolean(movement && movement.location);
-          const special = SPECIAL_STUDENTS.includes(student.name);
 
           const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
             const rect = event.currentTarget.getBoundingClientRect();
@@ -67,7 +50,7 @@ export function SeatGrid({ students, movementMap, onSelect, total, present, abse
           return (
             <button
               key={student.hakbun}
-              className={`seat ${moved ? 'moved' : ''} ${special ? 'special' : ''}`.trim()}
+              className={`seat ${moved ? 'moved' : ''}`.trim()}
               data-row={row}
               data-hakbun={student.hakbun}
               type="button"

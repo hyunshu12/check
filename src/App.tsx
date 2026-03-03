@@ -7,7 +7,7 @@ import { SearchFilter } from './components/SearchFilter';
 import { SeatGrid } from './components/SeatGrid';
 import { StatsDashboard } from './components/StatsDashboard';
 import { TopBar } from './components/TopBar';
-import { bannerConfig, galleryImages, galleryIntervalMs, GHOST_STUDENT_HAKBUN, TOTAL_STUDENTS } from './config/appSettings';
+import { bannerConfig, galleryImages, galleryIntervalMs, TOTAL_STUDENTS } from './config/appSettings';
 import { classroomSettings } from './config/classrooms';
 import { sundaySchedule, weekdaySchedule } from './config/schedule';
 import { students } from './config/students';
@@ -37,8 +37,7 @@ export default function App() {
     [mainLocations]
   );
 
-  const activeStudentCount = students.filter((student) => student.hakbun !== GHOST_STUDENT_HAKBUN).length;
-  const totalStudents = TOTAL_STUDENTS > 0 ? TOTAL_STUDENTS : activeStudentCount;
+  const totalStudents = TOTAL_STUDENTS && TOTAL_STUDENTS > 0 ? TOTAL_STUDENTS : students.length;
 
   const [movementMap, setMovementMap] = usePersistentState<MovementMap>(MOVEMENT_STORAGE_KEY, {});
 
@@ -60,14 +59,8 @@ export default function App() {
   const slotProgress = currentSlot ? getSlotProgress(currentSlot, now) : undefined;
 
   const absentCount = useMemo(
-    () =>
-      Object.values(movementMap).reduce((count, record) => {
-        if (record && record.location) {
-          return count + 1;
-        }
-        return count;
-      }, 0),
-    [movementMap]
+    () => students.reduce((count, student) => count + (movementMap[student.hakbun]?.location ? 1 : 0), 0),
+    [movementMap, students]
   );
 
   const presentCount = useMemo(() => clamp(totalStudents - absentCount, 0, totalStudents), [totalStudents, absentCount]);

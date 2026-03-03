@@ -77,11 +77,21 @@ npm run preview
 
 Cloudflare Pages 대시보드에서 환경 변수를 설정할 수 있습니다:
 
-- `VITE_TOTAL_STUDENTS`: 전체 학생 수 (기본값: 29)
+- `VITE_TOTAL_STUDENTS`: 전체 학생 수 (기본값: `students.ts` 명단 인원)
 - `VITE_BANNER_HEADLINE`: 배너 헤드라인 (기본값: "넌 충분히 잘하고 있어.")
 - `VITE_BANNER_SUBLINE`: 배너 서브라인 (기본값: "오늘의 응원")
 - `VITE_GALLERY_IMAGES`: 갤러리 이미지 경로 (쉼표로 구분)
 - `VITE_GALLERY_INTERVAL_MS`: 갤러리 이미지 전환 간격 (밀리초, 기본값: 12000)
+
+## 학년 변경 시 명단 업데이트
+
+학년이 바뀌어 학생이 전입/전출되거나 학번이 변경되면 아래 파일만 수정하면 됩니다.
+
+- 대상 파일: `src/config/students.ts`
+- 형식: `{ name: '홍길동', hakbun: '1101' }`
+- 좌석 배치는 학생 수 기준으로 자동 확장되므로, 별도 좌석 인덱스 수정이 필요하지 않습니다.
+
+선택적으로 `VITE_TOTAL_STUDENTS`를 지정하면 통계의 총원을 강제로 고정할 수 있고, 지정하지 않으면 명단 길이(`students.length`)를 사용합니다.
 
 ## 프로젝트 구조
 

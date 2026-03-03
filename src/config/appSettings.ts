@@ -7,9 +7,7 @@ const toNumber = (value: string | undefined) => {
 };
 
 const totalFromEnv = toNumber(import.meta.env.VITE_TOTAL_STUDENTS);
-export const TOTAL_STUDENTS = totalFromEnv ?? 28;
-export const GHOST_STUDENT_HAKBUN = '1115';
-export const SPECIAL_STUDENTS = ['장세혁', '조현수', '조경윤'];
+export const TOTAL_STUDENTS = totalFromEnv;
 
 const bannerHeadline = import.meta.env.VITE_BANNER_HEADLINE ?? '넌 충분히 잘하고 있어.';
 const bannerSubline = import.meta.env.VITE_BANNER_SUBLINE ?? '오늘의 응원';

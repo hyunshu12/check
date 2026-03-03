@@ -367,16 +367,6 @@ button {
   background: linear-gradient(140deg, rgba(248, 113, 113, 0.55), rgba(248, 113, 113, 0.18)) !important;
 }
 
-.seat.special {
-  border-color: rgba(244, 215, 86, 0.55);
-}
-
-.seat.empty {
-  border: 1px dashed rgba(148, 163, 184, 0.25);
-  background: rgba(15, 23, 42, 0.4);
-  cursor: default;
-}
-
 /* Movement Panel */
 .movement-card .card-subtitle {
   max-width: 320px;
