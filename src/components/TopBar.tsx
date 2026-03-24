@@ -42,4 +42,3 @@ export function TopBar({ banner, now, currentSlot, progress }: TopBarProps) {
     </header>
   );
 }
-
