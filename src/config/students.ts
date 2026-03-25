@@ -26,7 +26,7 @@ export const students: Student[] = [
   { name: '조경윤', hakbun: '2123' },
   { name: '조현수', hakbun: '2124' },
   { name: '채현민', hakbun: '2125' },
-  { name: '허시은', hakbun: '2126' },
+  { name: '허지원', hakbun: '2126' },
   { name: '황연', hakbun: '2127' }
 ];
 
