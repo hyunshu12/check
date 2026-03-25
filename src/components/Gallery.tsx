@@ -76,9 +76,9 @@ export function Gallery({ images, intervalMs }: GalleryProps) {
       <header className="card-header">
         <div>
           <h2 className="card-title" id="gallery-title">
-            클래스 갤러리
+            24EB 갤러리
           </h2>
-          <p className="card-subtitle">교실 분위기를 밝은 카드형 레이아웃으로 확인할 수 있습니다.</p>
+          <p className="card-subtitle">24기 이비과를 밝은 카드형 레이아웃으로 확인할 수 있습니다.</p>
         </div>
         <span className="live-badge">LIVE</span>
       </header>
