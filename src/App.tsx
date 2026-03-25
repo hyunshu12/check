@@ -98,8 +98,8 @@ export default function App() {
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
 
-    const baseTop = rect.top + window.scrollY + rect.height / 2 - overlayHeight / 2;
-    const baseLeft = rect.left + window.scrollX + rect.width / 2 - overlayWidth / 2;
+    const baseTop = rect.top + rect.height / 2 - overlayHeight / 2;
+    const baseLeft = rect.left + rect.width / 2 - overlayWidth / 2;
 
     const clampedTop = clamp(baseTop, margin, Math.max(margin, viewportHeight - overlayHeight - margin));
     const clampedLeft = clamp(baseLeft, margin, Math.max(margin, viewportWidth - overlayWidth - margin));
@@ -177,6 +177,22 @@ export default function App() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [selectedStudent, closeOverlay]);
 
+  useEffect(() => {
+    if (!selectedStudent) return;
+
+    const handleViewportChange = () => {
+      closeOverlay();
+    };
+
+    window.addEventListener('scroll', handleViewportChange, true);
+    window.addEventListener('resize', handleViewportChange);
+
+    return () => {
+      window.removeEventListener('scroll', handleViewportChange, true);
+      window.removeEventListener('resize', handleViewportChange);
+    };
+  }, [selectedStudent, closeOverlay]);
+
   return (
     <div id="app">
       <TopBar banner={bannerConfig} now={now} currentSlot={currentSlot ?? undefined} progress={slotProgress} />
@@ -231,5 +247,4 @@ export default function App() {
     </div>
   );
 }
-
 

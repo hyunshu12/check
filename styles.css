@@ -15,6 +15,9 @@
   --accent-strong: #1071e5;
   --accent-soft: rgba(49, 130, 246, 0.12);
   --accent-soft-strong: rgba(49, 130, 246, 0.2);
+  --movement: #f97316;
+  --movement-strong: #c2410c;
+  --movement-soft: rgba(249, 115, 22, 0.16);
   --positive: #23856b;
   --positive-soft: rgba(35, 133, 107, 0.12);
   --warning: #bc7a38;
@@ -287,7 +290,6 @@ button:focus-visible,
   width: 30%;
   border-radius: inherit;
   background: linear-gradient(90deg, var(--accent), #6aa8ff);
-  transition: width 0.2s ease;
 }
 
 .progress-text {
@@ -383,16 +385,10 @@ button:focus-visible,
   font-size: 1.02rem;
   font-weight: 800;
   box-shadow: 0 18px 36px rgba(49, 130, 246, 0.28);
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
 .reset-button:hover {
-  transform: translateY(-2px);
   box-shadow: 0 24px 42px rgba(49, 130, 246, 0.32);
-}
-
-.reset-button:active {
-  transform: translateY(0);
 }
 
 .seat-card {
@@ -449,8 +445,8 @@ button:focus-visible,
 }
 
 .stat-chip.absent {
-  background: rgba(49, 130, 246, 0.09);
-  border-color: rgba(49, 130, 246, 0.16);
+  background: var(--movement-soft);
+  border-color: rgba(249, 115, 22, 0.22);
 }
 
 .seat-grid {
@@ -470,11 +466,9 @@ button:focus-visible,
   border: 1px solid rgba(193, 198, 214, 0.28);
   box-shadow: 0 10px 28px rgba(19, 28, 38, 0.04);
   text-align: left;
-  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
 }
 
 .seat:hover {
-  transform: translateY(-4px);
   border-color: rgba(49, 130, 246, 0.22);
   box-shadow: 0 22px 40px rgba(19, 28, 38, 0.08);
 }
@@ -486,9 +480,9 @@ button:focus-visible,
 }
 
 .seat.moved {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(240, 246, 255, 0.98));
-  border-color: rgba(49, 130, 246, 0.24);
-  box-shadow: 0 16px 34px rgba(49, 130, 246, 0.1);
+  background: linear-gradient(180deg, rgba(255, 250, 244, 0.98), rgba(255, 238, 225, 0.98));
+  border-color: rgba(249, 115, 22, 0.32);
+  box-shadow: 0 16px 34px rgba(249, 115, 22, 0.16);
 }
 
 .seat-topline,
@@ -525,8 +519,9 @@ button:focus-visible,
 }
 
 .seat-status.moved {
-  background: rgba(78, 95, 121, 0.12);
-  color: #415772;
+  background: linear-gradient(135deg, var(--movement), #fb923c);
+  color: #fff7ed;
+  box-shadow: 0 8px 18px rgba(249, 115, 22, 0.18);
 }
 
 .seat-texts {
@@ -554,6 +549,15 @@ button:focus-visible,
   color: var(--text-secondary);
   font-size: 0.72rem;
   font-weight: 700;
+}
+
+.seat.moved .student-name {
+  color: #9a3412;
+}
+
+.seat.moved .seat-texts small,
+.seat.moved .seat-footer {
+  color: var(--movement-strong);
 }
 
 .badge {
@@ -696,13 +700,10 @@ button:focus-visible,
   height: 100%;
   object-fit: cover;
   opacity: 0;
-  transform: scale(1.04);
-  transition: opacity 0.45s ease, transform 0.8s ease;
 }
 
 .gallery-image.is-active {
   opacity: 1;
-  transform: scale(1);
 }
 
 .gallery-stage__overlay {
@@ -746,11 +747,9 @@ button:focus-visible,
   color: #fff;
   font-size: 1.18rem;
   backdrop-filter: blur(10px);
-  transition: transform 0.18s ease, background 0.18s ease;
 }
 
 .ghost-button:hover {
-  transform: translateY(-1px);
   background: rgba(255, 255, 255, 0.34);
 }
 
@@ -770,7 +769,6 @@ button:focus-visible,
   border-radius: 16px;
   border: 2px solid transparent;
   box-shadow: 0 10px 20px rgba(19, 28, 38, 0.06);
-  transition: transform 0.18s ease, border-color 0.18s ease;
 }
 
 .gallery-thumb img {
@@ -778,10 +776,6 @@ button:focus-visible,
   height: 100%;
   object-fit: cover;
   display: block;
-}
-
-.gallery-thumb:hover {
-  transform: translateY(-2px);
 }
 
 .gallery-thumb.active {
@@ -807,15 +801,12 @@ button:focus-visible,
   width: 200px;
   height: 200px;
   opacity: 0;
-  transform: scale(0.94);
   pointer-events: none;
-  transition: opacity 0.18s ease, transform 0.18s ease;
   z-index: 1200;
 }
 
 .bearing-overlay.visible {
   opacity: 1;
-  transform: scale(1);
   pointer-events: auto;
 }
 
@@ -927,11 +918,9 @@ button:focus-visible,
   color: var(--text-primary);
   font-size: 0.78rem;
   font-weight: 700;
-  transition: transform 0.18s ease, border-color 0.18s ease;
 }
 
 .etc-chip:hover {
-  transform: translateY(-1px);
   border-color: rgba(49, 130, 246, 0.32);
 }
 
