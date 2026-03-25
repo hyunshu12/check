@@ -3,9 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Gallery } from './components/Gallery';
 import { MovementOverlay, MovementExtraPanel } from './components/MovementOverlay';
 import { MovementPanel } from './components/MovementPanel';
-import { SearchFilter } from './components/SearchFilter';
 import { SeatGrid } from './components/SeatGrid';
-import { StatsDashboard } from './components/StatsDashboard';
 import { TopBar } from './components/TopBar';
 import { bannerConfig, galleryImages, galleryIntervalMs, TOTAL_STUDENTS } from './config/appSettings';
 import { classroomSettings } from './config/classrooms';
@@ -111,25 +109,6 @@ export default function App() {
     setExtraOpen(false);
   }, []);
 
-  const handleSearchStudentSelect = useCallback((student: Student) => {
-    // 검색에서 학생 선택 시 좌석 위치를 찾아서 오버레이 표시
-    const seatElement = document.querySelector(`[data-hakbun="${student.hakbun}"]`) as HTMLElement;
-    if (seatElement) {
-      const rect = seatElement.getBoundingClientRect();
-      handleSeatSelect(student, rect);
-    } else {
-      // 좌석을 찾을 수 없으면 화면 중앙에 표시
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      setSelectedStudent(student);
-      setOverlayPosition({
-        top: viewportHeight / 2 - OVERLAY_SIZE / 2,
-        left: viewportWidth / 2 - OVERLAY_SIZE / 2
-      });
-      setExtraOpen(false);
-    }
-  }, [handleSeatSelect]);
-
   const applyMovement = useCallback((student: Student, location: string) => {
     if (location === '복귀') {
       setMovementMap((prev) => upsertMovement(prev, student.hakbun, null));
@@ -215,6 +194,15 @@ export default function App() {
         </section>
 
         <aside className="dashboard-side">
+          <button
+            type="button"
+            className="reset-button"
+            onClick={handleResetMovement}
+            aria-label="이동한 학생들을 초기화"
+          >
+            전체 초기화
+          </button>
+
           <MovementPanel
             movementMap={movementMap}
             students={students}
@@ -222,16 +210,6 @@ export default function App() {
             extraLocations={extraLocations}
           />
           <Gallery images={galleryImages} intervalMs={galleryIntervalMs} />
-          <SearchFilter
-            students={students}
-            movementMap={movementMap}
-            onStudentSelect={handleSearchStudentSelect}
-          />
-          <StatsDashboard
-            movementMap={movementMap}
-            students={students}
-            totalStudents={totalStudents}
-          />
         </aside>
       </main>
 
@@ -250,18 +228,8 @@ export default function App() {
         extraLocations={extraLocations}
         onSelect={handleExtraLocationSelect}
       />
-
-      <button
-        type="button"
-        className="reset-button"
-        onClick={handleResetMovement}
-        aria-label="이동한 학생들을 초기화"
-      >
-        초기화
-      </button>
     </div>
   );
 }
-
 
 

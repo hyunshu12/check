@@ -57,16 +57,22 @@ export const MovementPanel = memo(function MovementPanel({ movementMap, students
     return keys;
   }, [groups, mainLocations]);
 
+  const movedCount = useMemo(
+    () => Array.from(groups.values()).reduce((sum, group) => sum + group.items.length, 0),
+    [groups]
+  );
+
   return (
     <section className="card movement-card" aria-labelledby="movement-title">
       <header className="card-header">
         <div>
+          <span className="section-eyebrow">Movement Summary</span>
           <h2 className="card-title" id="movement-title">
-            이동 현황
+            이동 요약
           </h2>
-          <p className="card-subtitle">현재 이동 중인 학생들의 위치를 한눈에 확인하세요.</p>
+          <p className="card-subtitle">교실 밖에 있는 학생만 현재 위치 기준으로 묶어 보여줍니다.</p>
         </div>
-        <span className="badge subtle">{groups.size ? `${orderedGroupKeys.length}개 위치` : '이동 없음'}</span>
+        <span className="badge subtle">{movedCount ? `${movedCount}명 이동 중` : '전원 재실'}</span>
       </header>
 
       {orderedGroupKeys.length === 0 ? (
@@ -81,7 +87,10 @@ export const MovementPanel = memo(function MovementPanel({ movementMap, students
             return (
               <article key={groupKey} className="movement-group">
                 <div className="group-header">
-                  <span className="group-label">{group.label}</span>
+                  <div className="group-title-block">
+                    <span className="group-label">{group.label}</span>
+                    <span className="group-caption">현재 위치</span>
+                  </div>
                   <span className="badge">{sortedItems.length}명</span>
                 </div>
                 <div className="group-body">
@@ -90,7 +99,10 @@ export const MovementPanel = memo(function MovementPanel({ movementMap, students
 
                     return (
                       <div key={student.hakbun} className="movement-chip" title={location}>
-                        <span className="name">{student.name}</span>
+                        <div className="movement-chip__identity">
+                          <span className="name">{student.name}</span>
+                          <span className="meta">{student.hakbun}</span>
+                        </div>
                         <span className="detail">{detail}</span>
                       </div>
                     );
@@ -104,5 +116,4 @@ export const MovementPanel = memo(function MovementPanel({ movementMap, students
     </section>
   );
 });
-
 

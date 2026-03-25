@@ -11,6 +11,10 @@ export function Gallery({ images, intervalMs }: GalleryProps) {
   const timerRef = useRef<number>();
 
   const hasMultiple = validImages.length > 1;
+  const previewIndices = useMemo(() => {
+    const previewCount = Math.min(4, validImages.length);
+    return Array.from({ length: previewCount }, (_, offset) => (index + offset) % validImages.length);
+  }, [index, validImages.length]);
 
   useEffect(() => {
     if (!validImages.length) return;
@@ -52,11 +56,11 @@ export function Gallery({ images, intervalMs }: GalleryProps) {
   if (!validImages.length) {
     return (
       <section className="card gallery-card" aria-labelledby="gallery-title">
-        <header className="card-header">
-          <div>
-            <h2 className="card-title" id="gallery-title">
-              오늘의 순간
-            </h2>
+      <header className="card-header">
+        <div>
+          <h2 className="card-title" id="gallery-title">
+            오늘의 순간
+          </h2>
             <p className="card-subtitle">사진을 등록하면 교실 분위기를 생생하게 보여드릴 수 있어요.</p>
           </div>
         </header>
@@ -72,20 +76,11 @@ export function Gallery({ images, intervalMs }: GalleryProps) {
       <header className="card-header">
         <div>
           <h2 className="card-title" id="gallery-title">
-            이비 갤러리
+            클래스 갤러리
           </h2>
-          <p className="card-subtitle">갤러리가 자동으로 새 이미지를 순환합니다.</p>
+          <p className="card-subtitle">교실 분위기를 밝은 카드형 레이아웃으로 확인할 수 있습니다.</p>
         </div>
-        {hasMultiple ? (
-          <div className="gallery-controls" role="group" aria-label="갤러리 탐색">
-            <button type="button" className="ghost-button" aria-label="이전 이미지" onClick={handlePrev}>
-              ‹
-            </button>
-            <button type="button" className="ghost-button" aria-label="다음 이미지" onClick={handleNext}>
-              ›
-            </button>
-          </div>
-        ) : null}
+        <span className="live-badge">LIVE</span>
       </header>
 
       <div className="gallery-stage">
@@ -97,27 +92,48 @@ export function Gallery({ images, intervalMs }: GalleryProps) {
             className={`gallery-image ${i === index ? 'is-active' : ''}`}
           />
         ))}
+
+        <div className="gallery-stage__overlay">
+          <div>
+            <p className="gallery-stage__title">교실 스케치</p>
+            <p className="gallery-stage__meta">
+              {index + 1} / {validImages.length}
+            </p>
+          </div>
+
+          {hasMultiple ? (
+            <div className="gallery-controls" role="group" aria-label="갤러리 탐색">
+              <button type="button" className="ghost-button" aria-label="이전 이미지" onClick={handlePrev}>
+                ‹
+              </button>
+              <button type="button" className="ghost-button" aria-label="다음 이미지" onClick={handleNext}>
+                ›
+              </button>
+            </div>
+          ) : null}
+        </div>
       </div>
 
       {hasMultiple ? (
-        <div className="gallery-dots" role="tablist" aria-label="갤러리 인디케이터">
-          {validImages.map((_, i) => (
+        <div className="gallery-strip" role="tablist" aria-label="갤러리 인디케이터">
+          {previewIndices.map((previewIndex) => (
             <button
-              key={i}
+              key={`${previewIndex}-${validImages[previewIndex]}`}
               type="button"
               role="tab"
-              aria-selected={i === index}
-              className={`dot ${i === index ? 'active' : ''}`}
+              aria-selected={previewIndex === index}
+              className={`gallery-thumb ${previewIndex === index ? 'active' : ''}`}
               onClick={() => {
-                setIndex(i);
+                setIndex(previewIndex);
                 resetTimer();
               }}
-              aria-label={`${i + 1}번째 이미지로 이동`}
-            />
+              aria-label={`${previewIndex + 1}번째 이미지로 이동`}
+            >
+              <img src={validImages[previewIndex]} alt={`갤러리 미리보기 ${previewIndex + 1}`} />
+            </button>
           ))}
         </div>
       ) : null}
     </section>
   );
 }
-
