@@ -891,6 +891,7 @@ button:focus-visible,
   border: 1px solid rgba(255, 255, 255, 0.85);
   box-shadow: var(--shadow-float);
   backdrop-filter: blur(18px);
+  overscroll-behavior: contain;
   z-index: 1210;
 }
 
@@ -912,6 +913,8 @@ button:focus-visible,
   max-height: 280px;
   overflow-y: auto;
   padding-right: 4px;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
 }
 
 .etc-chip {

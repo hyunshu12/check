@@ -180,7 +180,14 @@ export default function App() {
   useEffect(() => {
     if (!selectedStudent) return;
 
-    const handleViewportChange = () => {
+    const handleViewportChange = (event?: Event) => {
+      const target = event?.target;
+
+      if (target instanceof Node) {
+        if (overlayRef.current?.contains(target)) return;
+        if (extraRef.current?.contains(target)) return;
+      }
+
       closeOverlay();
     };
 
@@ -247,4 +254,3 @@ export default function App() {
     </div>
   );
 }
-
