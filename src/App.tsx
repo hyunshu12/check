@@ -26,6 +26,8 @@ export default function App() {
   const [movementMap, setMovementMap] = usePersistentState<MovementMap>(MOVEMENT_STORAGE_KEY, {});
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [showExtraLocations, setShowExtraLocations] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isFullscreenSupported, setIsFullscreenSupported] = useState(true);
 
   const mainLocations = useMemo(
     () => classroomSettings.main.filter((location) => location.trim().length > 0),
@@ -112,6 +114,17 @@ export default function App() {
     closeModal();
   }, [closeModal, movedCount, setMovementMap]);
 
+  const handleToggleFullscreen = useCallback(() => {
+    if (!isFullscreenSupported && !document.fullscreenElement) return;
+
+    if (document.fullscreenElement) {
+      void document.exitFullscreen().catch(() => undefined);
+      return;
+    }
+
+    void document.documentElement.requestFullscreen().catch(() => undefined);
+  }, [isFullscreenSupported]);
+
   useEffect(() => {
     if (!selectedStudent) return;
 
@@ -124,6 +137,20 @@ export default function App() {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [closeModal, selectedStudent]);
+
+  useEffect(() => {
+    const syncFullscreenState = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+      setIsFullscreenSupported(
+        document.fullscreenEnabled || 'requestFullscreen' in document.documentElement
+      );
+    };
+
+    syncFullscreenState();
+
+    document.addEventListener('fullscreenchange', syncFullscreenState);
+    return () => document.removeEventListener('fullscreenchange', syncFullscreenState);
+  }, []);
 
   return (
     <div id="app" className="skrr-app">
@@ -157,7 +184,17 @@ export default function App() {
         <div className="dashboard-actions">
           <button
             type="button"
-            className="dashboard-reset"
+            className="dashboard-action-button"
+            onClick={handleToggleFullscreen}
+            disabled={!isFullscreenSupported && !isFullscreen}
+            aria-label={isFullscreen ? '전체 화면 종료' : '전체 화면'}
+            aria-pressed={isFullscreen}
+          >
+            {isFullscreen ? '전체 화면 해제' : '전체 화면'}
+          </button>
+          <button
+            type="button"
+            className="dashboard-action-button dashboard-reset"
             onClick={handleResetMovement}
             disabled={!movedCount}
             aria-label="모든 이동 기록 전체 초기화"

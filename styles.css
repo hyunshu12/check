@@ -345,9 +345,11 @@ img {
 .dashboard-actions {
   display: flex;
   justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
-.dashboard-reset {
+.dashboard-action-button {
   min-width: 132px;
   padding: 12px 18px;
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -357,16 +359,17 @@ img {
   font-size: 0.92rem;
   font-weight: 600;
   line-height: 1;
+  cursor: pointer;
   transition: background 160ms ease, border-color 160ms ease, opacity 160ms ease;
 }
 
-.dashboard-reset:hover:not(:disabled),
-.dashboard-reset:focus-visible:not(:disabled) {
+.dashboard-action-button:hover:not(:disabled),
+.dashboard-action-button:focus-visible:not(:disabled) {
   background: rgba(255, 255, 255, 0.12);
   border-color: rgba(255, 255, 255, 0.2);
 }
 
-.dashboard-reset:disabled {
+.dashboard-action-button:disabled {
   opacity: 0.38;
   cursor: not-allowed;
 }
@@ -887,9 +890,10 @@ img {
 
   .dashboard-actions {
     justify-content: stretch;
+    flex-direction: column;
   }
 
-  .dashboard-reset {
+  .dashboard-action-button {
     width: 100%;
   }
 
