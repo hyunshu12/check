@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "perf:size": "size-limit && node scripts/check-image-budget.mjs",
+    "perf:lighthouse:ci": "lhci collect --config=.lighthouserc.json && lhci assert --config=.lighthouserc.json",
+    "perf:verify": "npm run build && npm run perf:size && npm run perf:lighthouse:ci"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -23,5 +26,23 @@
     "typescript": "^5.4.5",
     "vite": "^5.1.6",
     "web-vitals": "^5.2.0"
-  }
+  },
+  "size-limit": [
+    {
+      "path": "dist/assets/react-vendor-*.js",
+      "limit": "160 KB"
+    },
+    {
+      "path": "dist/assets/index-*.js",
+      "limit": "25 KB"
+    },
+    {
+      "path": "dist/assets/web-vitals*.js",
+      "limit": "15 KB"
+    },
+    {
+      "path": "dist/assets/index-*.css",
+      "limit": "20 KB"
+    }
+  ]
 }

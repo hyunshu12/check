@@ -1,28 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { DashboardHero } from './components/DashboardHero';
 import { Gallery } from './components/Gallery';
 import { MovementModal } from './components/MovementOverlay';
 import { MovementPanel } from './components/MovementPanel';
 import { SeatGrid } from './components/SeatGrid';
 import { bannerConfig, galleryImages, galleryIntervalMs, TOTAL_STUDENTS } from './config/appSettings';
 import { classroomSettings } from './config/classrooms';
-import { sundaySchedule, weekdaySchedule } from './config/schedule';
 import { students } from './config/students';
-import { useClock } from './hooks/useClock';
 import { usePersistentState } from './hooks/usePersistentState';
 import { MovementMap, MovementRecord, Student } from './types';
 import { upsertMovement } from './utils/movement';
-import { getCurrentScheduleSlot } from './utils/schedule';
 
 const MOVEMENT_STORAGE_KEY = 'movementMap';
 
-function formatTime(now: Date) {
-  const units = [now.getHours(), now.getMinutes(), now.getSeconds()].map((value) => String(value).padStart(2, '0'));
-  return units.join(' : ');
-}
-
 export default function App() {
-  const now = useClock();
   const [movementMap, setMovementMap] = usePersistentState<MovementMap>(MOVEMENT_STORAGE_KEY, {});
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [showExtraLocations, setShowExtraLocations] = useState(false);
@@ -50,15 +42,6 @@ export default function App() {
   );
 
   const presentCount = useMemo(() => Math.max(totalStudents - movedCount, 0), [movedCount, totalStudents]);
-
-  const scheduleForToday = useMemo(() => {
-    const day = now.getDay();
-    if (day === 0) return sundaySchedule;
-    if (day >= 1 && day <= 5) return weekdaySchedule;
-    return [];
-  }, [now]);
-
-  const currentSlot = useMemo(() => getCurrentScheduleSlot(scheduleForToday, now), [scheduleForToday, now]);
 
   const selectedMovement = selectedStudent ? movementMap[selectedStudent.hakbun] : undefined;
 
@@ -154,10 +137,7 @@ export default function App() {
 
   return (
     <div id="app" className="skrr-app">
-      <header className="skrr-hero" aria-label="현재 시각과 시간표">
-        <p className="skrr-hero__time">{formatTime(now)}</p>
-        <p className="skrr-hero__slot">{currentSlot?.name ?? '진행 중인 일정 없음'}</p>
-      </header>
+      <DashboardHero />
 
       <main className="skrr-shell" aria-label="교실 모니터링 대시보드">
         <SeatGrid

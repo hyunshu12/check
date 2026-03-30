@@ -103,6 +103,21 @@ Cloudflare Pages 대시보드에서 환경 변수를 설정할 수 있습니다:
 - `VITE_BANNER_SUBLINE`: 배너 서브라인 (기본값: "오늘의 응원")
 - `VITE_GALLERY_IMAGES`: 갤러리 이미지 경로 (쉼표로 구분)
 - `VITE_GALLERY_INTERVAL_MS`: 갤러리 이미지 전환 간격 (밀리초, 기본값: 12000)
+- `VITE_WEB_VITALS_ENDPOINT`: Core Web Vitals 전송 엔드포인트. 설정하지 않으면 브라우저 콘솔에 기록됩니다.
+
+## 성능 검증
+
+이 프로젝트에는 Lighthouse CI, 번들 크기 예산, 갤러리 이미지 예산, 실사용 Web Vitals 계측이 포함되어 있습니다.
+
+- 전체 성능 검증: `npm run perf:verify`
+- 번들 및 이미지 예산 검사: `npm run perf:size`
+- Lighthouse CI 수집 및 assertion 검사: `npm run perf:lighthouse:ci`
+
+실사용 Web Vitals는 `src/lib/performance/webVitals.ts`에서 수집합니다.
+
+- 수집 지표: `LCP`, `INP`, `CLS`
+- 전송 방식: `VITE_WEB_VITALS_ENDPOINT`가 있으면 `sendBeacon` 우선, 실패 시 `fetch(..., { keepalive: true })`
+- 엔드포인트 미설정 시: 브라우저 콘솔 로그와 `window`의 `web-vitals:metric` 커스텀 이벤트로 노출
 
 ## 학년 변경 시 명단 업데이트
 

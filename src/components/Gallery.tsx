@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 
 interface GalleryProps {
   images: string[];
   intervalMs: number;
 }
 
-export function Gallery({ images, intervalMs }: GalleryProps) {
+export const Gallery = memo(function Gallery({ images, intervalMs }: GalleryProps) {
   const validImages = useMemo(() => images.filter(Boolean), [images]);
   const [index, setIndex] = useState(0);
   const timerRef = useRef<number>();
@@ -70,7 +70,12 @@ export function Gallery({ images, intervalMs }: GalleryProps) {
   return (
     <section className={`gallery-panel${hasMultiple ? '' : ' gallery-panel--single'}`} aria-labelledby="gallery-title">
       <div className="gallery-panel__main">
-        <img src={validImages[index]} alt={`갤러리 이미지 ${index + 1}`} className="gallery-panel__main-image" />
+        <img
+          src={validImages[index]}
+          alt={`갤러리 이미지 ${index + 1}`}
+          className="gallery-panel__main-image"
+          decoding="async"
+        />
         <div className="gallery-panel__main-glow" aria-hidden="true" />
 
         <div className="gallery-panel__meta">
@@ -97,7 +102,12 @@ export function Gallery({ images, intervalMs }: GalleryProps) {
                 }}
                 aria-label={`${previewIndex + 1}번째 이미지로 이동`}
               >
-                <img src={validImages[previewIndex]} alt={`갤러리 미리보기 ${previewIndex + 1}`} />
+                <img
+                  src={validImages[previewIndex]}
+                  alt={`갤러리 미리보기 ${previewIndex + 1}`}
+                  decoding="async"
+                  loading="lazy"
+                />
               </button>
             ))}
           </div>
@@ -116,4 +126,4 @@ export function Gallery({ images, intervalMs }: GalleryProps) {
       </div>
     </section>
   );
-}
+});

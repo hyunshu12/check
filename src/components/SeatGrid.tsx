@@ -1,3 +1,5 @@
+import { memo } from 'react';
+
 import returnIconSrc from '../assets/return-icon.svg';
 import { AppBannerConfig, MovementMap, Student } from '../types';
 
@@ -12,7 +14,16 @@ interface SeatGridProps {
   onReturn: (student: Student) => void;
 }
 
-export function SeatGrid({ students, movementMap, total, present, moved, quote, onSelect, onReturn }: SeatGridProps) {
+export const SeatGrid = memo(function SeatGrid({
+  students,
+  movementMap,
+  total,
+  present,
+  moved,
+  quote,
+  onSelect,
+  onReturn
+}: SeatGridProps) {
   return (
     <section className="status-board" aria-labelledby="status-board-title">
       <header className="status-board__header">
@@ -100,4 +111,4 @@ export function SeatGrid({ students, movementMap, total, present, moved, quote, 
       </div>
     </section>
   );
-}
+});
