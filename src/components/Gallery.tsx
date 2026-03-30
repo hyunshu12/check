@@ -12,7 +12,7 @@ export function Gallery({ images, intervalMs }: GalleryProps) {
 
   const hasMultiple = validImages.length > 1;
   const previewIndices = useMemo(() => {
-    const previewCount = Math.min(4, validImages.length);
+    const previewCount = Math.min(3, validImages.length);
     return Array.from({ length: previewCount }, (_, offset) => (index + offset) % validImages.length);
   }, [index, validImages.length]);
 
@@ -55,85 +55,65 @@ export function Gallery({ images, intervalMs }: GalleryProps) {
 
   if (!validImages.length) {
     return (
-      <section className="card gallery-card" aria-labelledby="gallery-title">
-      <header className="card-header">
-        <div>
-          <h2 className="card-title" id="gallery-title">
-            오늘의 순간
-          </h2>
-            <p className="card-subtitle">사진을 등록하면 교실 분위기를 생생하게 보여드릴 수 있어요.</p>
+      <section className="gallery-panel gallery-panel--single" aria-labelledby="gallery-title">
+        <div className="gallery-panel__main gallery-panel__main--empty">
+          <div className="gallery-panel__meta">
+            <h2 className="gallery-panel__title" id="gallery-title">
+              사진을 기다리는 중
+            </h2>
           </div>
-        </header>
-        <div className="gallery-stage gallery-empty">
-          <div className="gallery-placeholder">갤러리에 표시할 이미지를 추가해 주세요</div>
         </div>
       </section>
     );
   }
 
   return (
-    <section className="card gallery-card" aria-labelledby="gallery-title">
-      <header className="card-header">
-        <div>
-          <h2 className="card-title" id="gallery-title">
-            24EB 갤러리
+    <section className={`gallery-panel${hasMultiple ? '' : ' gallery-panel--single'}`} aria-labelledby="gallery-title">
+      <div className="gallery-panel__main">
+        <img src={validImages[index]} alt={`갤러리 이미지 ${index + 1}`} className="gallery-panel__main-image" />
+        <div className="gallery-panel__main-glow" aria-hidden="true" />
+
+        <div className="gallery-panel__meta">
+          <h2 className="gallery-panel__title" id="gallery-title">
+            교실 스케치
           </h2>
-          <p className="card-subtitle">24기 이비과를 밝은 카드형 레이아웃으로 확인할 수 있습니다.</p>
+          <p className="gallery-panel__caption">
+            {index + 1} / {validImages.length}
+          </p>
         </div>
-        <span className="live-badge">LIVE</span>
-      </header>
 
-      <div className="gallery-stage">
-        {validImages.map((src, i) => (
-          <img
-            key={src}
-            src={src}
-            alt={`갤러리 이미지 ${i + 1}`}
-            className={`gallery-image ${i === index ? 'is-active' : ''}`}
-          />
-        ))}
-
-        <div className="gallery-stage__overlay">
-          <div>
-            <p className="gallery-stage__title">교실 스케치</p>
-            <p className="gallery-stage__meta">
-              {index + 1} / {validImages.length}
-            </p>
+        {hasMultiple ? (
+          <div className="gallery-panel__thumbs" role="tablist" aria-label="갤러리 인디케이터">
+            {previewIndices.map((previewIndex) => (
+              <button
+                key={`${previewIndex}-${validImages[previewIndex]}`}
+                type="button"
+                role="tab"
+                aria-selected={previewIndex === index}
+                className={`gallery-thumb${previewIndex === index ? ' is-active' : ''}`}
+                onClick={() => {
+                  setIndex(previewIndex);
+                  resetTimer();
+                }}
+                aria-label={`${previewIndex + 1}번째 이미지로 이동`}
+              >
+                <img src={validImages[previewIndex]} alt={`갤러리 미리보기 ${previewIndex + 1}`} />
+              </button>
+            ))}
           </div>
+        ) : null}
 
-          {hasMultiple ? (
-            <div className="gallery-controls" role="group" aria-label="갤러리 탐색">
-              <button type="button" className="ghost-button" aria-label="이전 이미지" onClick={handlePrev}>
-                ‹
-              </button>
-              <button type="button" className="ghost-button" aria-label="다음 이미지" onClick={handleNext}>
-                ›
-              </button>
-            </div>
-          ) : null}
-        </div>
-      </div>
-
-      {hasMultiple ? (
-        <div className="gallery-strip" role="tablist" aria-label="갤러리 인디케이터">
-          {previewIndices.map((previewIndex) => (
-            <button
-              key={`${previewIndex}-${validImages[previewIndex]}`}
-              type="button"
-              role="tab"
-              aria-selected={previewIndex === index}
-              className={`gallery-thumb ${previewIndex === index ? 'active' : ''}`}
-              onClick={() => {
-                setIndex(previewIndex);
-                resetTimer();
-              }}
-              aria-label={`${previewIndex + 1}번째 이미지로 이동`}
-            >
-              <img src={validImages[previewIndex]} alt={`갤러리 미리보기 ${previewIndex + 1}`} />
+        {hasMultiple ? (
+          <div className="gallery-panel__controls" role="group" aria-label="갤러리 탐색">
+            <button type="button" className="gallery-panel__control" aria-label="이전 이미지" onClick={handlePrev}>
+              Prev
             </button>
-          ))}
-        </div>
-      ) : null}
+            <button type="button" className="gallery-panel__control" aria-label="다음 이미지" onClick={handleNext}>
+              Next
+            </button>
+          </div>
+        ) : null}
+      </div>
     </section>
   );
 }

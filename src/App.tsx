@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Gallery } from './components/Gallery';
-import { MovementOverlay, MovementExtraPanel } from './components/MovementOverlay';
+import { MovementModal } from './components/MovementOverlay';
 import { MovementPanel } from './components/MovementPanel';
 import { SeatGrid } from './components/SeatGrid';
-import { TopBar } from './components/TopBar';
 import { bannerConfig, galleryImages, galleryIntervalMs, TOTAL_STUDENTS } from './config/appSettings';
 import { classroomSettings } from './config/classrooms';
 import { sundaySchedule, weekdaySchedule } from './config/schedule';
@@ -13,38 +12,42 @@ import { useClock } from './hooks/useClock';
 import { usePersistentState } from './hooks/usePersistentState';
 import { MovementMap, MovementRecord, Student } from './types';
 import { upsertMovement } from './utils/movement';
-import { getCurrentScheduleSlot, getSlotProgress } from './utils/schedule';
-
-type OverlayPosition = { top: number; left: number };
+import { getCurrentScheduleSlot } from './utils/schedule';
 
 const MOVEMENT_STORAGE_KEY = 'movementMap';
-const OVERLAY_SIZE = 200;
-const EXTRA_PANEL_WIDTH = 280;
-const VIEWPORT_MARGIN = 16;
 
-function clamp(value: number, min: number, max: number) {
-  return Math.min(Math.max(value, min), max);
+function formatTime(now: Date) {
+  const units = [now.getHours(), now.getMinutes(), now.getSeconds()].map((value) => String(value).padStart(2, '0'));
+  return units.join(' : ');
 }
 
 export default function App() {
   const now = useClock();
-  const { main: rawMainLocations, extra: extraLocations } = classroomSettings;
-  const mainLocations = useMemo(() => rawMainLocations.filter((location) => location.trim().length > 0), [rawMainLocations]);
-  const mainLocationsForOverlay = useMemo(
+  const [movementMap, setMovementMap] = usePersistentState<MovementMap>(MOVEMENT_STORAGE_KEY, {});
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [showExtraLocations, setShowExtraLocations] = useState(false);
+
+  const mainLocations = useMemo(
+    () => classroomSettings.main.filter((location) => location.trim().length > 0),
+    []
+  );
+  const extraLocations = useMemo(
+    () => [...classroomSettings.extra].sort((a, b) => a.localeCompare(b, 'ko-KR')),
+    []
+  );
+  const modalLocations = useMemo(
     () => mainLocations.filter((location) => location !== '복귀'),
     [mainLocations]
   );
 
   const totalStudents = TOTAL_STUDENTS && TOTAL_STUDENTS > 0 ? TOTAL_STUDENTS : students.length;
 
-  const [movementMap, setMovementMap] = usePersistentState<MovementMap>(MOVEMENT_STORAGE_KEY, {});
+  const movedCount = useMemo(
+    () => students.reduce((count, student) => count + (movementMap[student.hakbun]?.location ? 1 : 0), 0),
+    [movementMap]
+  );
 
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-  const [overlayPosition, setOverlayPosition] = useState<OverlayPosition | null>(null);
-  const [isExtraOpen, setExtraOpen] = useState(false);
-
-  const overlayRef = useRef<HTMLDivElement | null>(null);
-  const extraRef = useRef<HTMLDivElement | null>(null);
+  const presentCount = useMemo(() => Math.max(totalStudents - movedCount, 0), [movedCount, totalStudents]);
 
   const scheduleForToday = useMemo(() => {
     const day = now.getDay();
@@ -54,178 +57,94 @@ export default function App() {
   }, [now]);
 
   const currentSlot = useMemo(() => getCurrentScheduleSlot(scheduleForToday, now), [scheduleForToday, now]);
-  const slotProgress = currentSlot ? getSlotProgress(currentSlot, now) : undefined;
 
-  const absentCount = useMemo(
-    () => students.reduce((count, student) => count + (movementMap[student.hakbun]?.location ? 1 : 0), 0),
-    [movementMap, students]
-  );
+  const selectedMovement = selectedStudent ? movementMap[selectedStudent.hakbun] : undefined;
 
-  const presentCount = useMemo(() => clamp(totalStudents - absentCount, 0, totalStudents), [totalStudents, absentCount]);
-
-  const extraPosition = useMemo(() => {
-    if (!overlayPosition) return null;
-
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const margin = VIEWPORT_MARGIN;
-
-    const desiredTop = clamp(overlayPosition.top, margin, viewportHeight - VIEWPORT_MARGIN - OVERLAY_SIZE);
-    const leftCandidate = overlayPosition.left - EXTRA_PANEL_WIDTH - margin;
-
-    if (leftCandidate >= margin) {
-      return { top: desiredTop, left: leftCandidate } satisfies OverlayPosition;
-    }
-
-    const rightCandidate = overlayPosition.left + OVERLAY_SIZE + margin;
-    const maxLeft = viewportWidth - EXTRA_PANEL_WIDTH - margin;
-    return {
-      top: desiredTop,
-      left: clamp(rightCandidate, margin, Math.max(margin, maxLeft))
-    } satisfies OverlayPosition;
-  }, [overlayPosition]);
-
-  const closeOverlay = useCallback(() => {
+  const closeModal = useCallback(() => {
     setSelectedStudent(null);
-    setOverlayPosition(null);
-    setExtraOpen(false);
+    setShowExtraLocations(false);
   }, []);
 
-  const handleSeatSelect = useCallback((student: Student, rect: DOMRect) => {
-    const margin = VIEWPORT_MARGIN;
-    const overlayWidth = OVERLAY_SIZE;
-    const overlayHeight = OVERLAY_SIZE;
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-
-    const baseTop = rect.top + rect.height / 2 - overlayHeight / 2;
-    const baseLeft = rect.left + rect.width / 2 - overlayWidth / 2;
-
-    const clampedTop = clamp(baseTop, margin, Math.max(margin, viewportHeight - overlayHeight - margin));
-    const clampedLeft = clamp(baseLeft, margin, Math.max(margin, viewportWidth - overlayWidth - margin));
-
+  const openStudentModal = useCallback((student: Student) => {
     setSelectedStudent(student);
-    setOverlayPosition({ top: clampedTop, left: clampedLeft });
-    setExtraOpen(false);
+    setShowExtraLocations(false);
   }, []);
 
   const applyMovement = useCallback((student: Student, location: string) => {
     if (location === '복귀') {
       setMovementMap((prev) => upsertMovement(prev, student.hakbun, null));
-      closeOverlay();
+      closeModal();
       return;
     }
 
     const record: MovementRecord = {
       location,
-      timestamp: Date.now() // 이동 시작 시간 기록
+      timestamp: Date.now()
     };
 
     setMovementMap((prev) => upsertMovement(prev, student.hakbun, record));
-    closeOverlay();
-  }, [closeOverlay]);
+    closeModal();
+  }, [closeModal, setMovementMap]);
 
   const handleLocationSelect = useCallback((location: string) => {
     if (!selectedStudent) return;
     if (location === '기타') {
-      setExtraOpen(true);
+      setShowExtraLocations((prev) => !prev);
       return;
     }
     applyMovement(selectedStudent, location);
-  }, [selectedStudent, applyMovement]);
+  }, [applyMovement, selectedStudent]);
 
-  const handleExtraLocationSelect = useCallback((location: string) => {
-    if (!selectedStudent) return;
-    applyMovement(selectedStudent, location);
-  }, [selectedStudent, applyMovement]);
+  const handleReturnStudent = useCallback((student: Student) => {
+    setMovementMap((prev) => upsertMovement(prev, student.hakbun, null));
+    if (selectedStudent?.hakbun === student.hakbun) {
+      closeModal();
+    }
+  }, [closeModal, selectedStudent?.hakbun, setMovementMap]);
 
   const handleResetMovement = useCallback(() => {
-    const shouldReset = window.confirm('초기화 하겠습니까?');
-    if (!shouldReset) {
-      return;
-    }
+    if (!movedCount) return;
+
+    const shouldReset = window.confirm('모든 이동 기록을 초기화할까요?');
+    if (!shouldReset) return;
 
     setMovementMap({});
-    closeOverlay();
-  }, [closeOverlay]);
-
-  useEffect(() => {
-    if (!selectedStudent) return;
-
-    const handleMouseDown = (event: MouseEvent) => {
-      const target = event.target as Node;
-      if (overlayRef.current?.contains(target)) return;
-      if (extraRef.current?.contains(target)) return;
-      if ((target as HTMLElement).closest('.seat')) return;
-      closeOverlay();
-    };
-
-    document.addEventListener('mousedown', handleMouseDown);
-    return () => document.removeEventListener('mousedown', handleMouseDown);
-  }, [selectedStudent, closeOverlay]);
+    closeModal();
+  }, [closeModal, movedCount, setMovementMap]);
 
   useEffect(() => {
     if (!selectedStudent) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        closeOverlay();
+        closeModal();
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [selectedStudent, closeOverlay]);
-
-  useEffect(() => {
-    if (!selectedStudent) return;
-
-    const handleViewportChange = (event?: Event) => {
-      const target = event?.target;
-
-      if (target instanceof Node) {
-        if (overlayRef.current?.contains(target)) return;
-        if (extraRef.current?.contains(target)) return;
-      }
-
-      closeOverlay();
-    };
-
-    window.addEventListener('scroll', handleViewportChange, true);
-    window.addEventListener('resize', handleViewportChange);
-
-    return () => {
-      window.removeEventListener('scroll', handleViewportChange, true);
-      window.removeEventListener('resize', handleViewportChange);
-    };
-  }, [selectedStudent, closeOverlay]);
+  }, [closeModal, selectedStudent]);
 
   return (
-    <div id="app">
-      <TopBar banner={bannerConfig} now={now} currentSlot={currentSlot ?? undefined} progress={slotProgress} />
+    <div id="app" className="skrr-app">
+      <header className="skrr-hero" aria-label="현재 시각과 시간표">
+        <p className="skrr-hero__time">{formatTime(now)}</p>
+        <p className="skrr-hero__slot">{currentSlot?.name ?? '진행 중인 일정 없음'}</p>
+      </header>
 
-      <main className="dashboard" aria-label="교실 모니터링 대시보드">
-        <section className="dashboard-main">
-          <SeatGrid
-            students={students}
-            movementMap={movementMap}
-            onSelect={handleSeatSelect}
-            total={totalStudents}
-            present={presentCount}
-            absent={absentCount}
-          />
-        </section>
+      <main className="skrr-shell" aria-label="교실 모니터링 대시보드">
+        <SeatGrid
+          students={students}
+          movementMap={movementMap}
+          total={totalStudents}
+          present={presentCount}
+          moved={movedCount}
+          quote={bannerConfig}
+          onSelect={openStudentModal}
+          onReturn={handleReturnStudent}
+        />
 
-        <aside className="dashboard-side">
-          <button
-            type="button"
-            className="reset-button"
-            onClick={handleResetMovement}
-            aria-label="이동한 학생들을 초기화"
-          >
-            전체 초기화
-          </button>
-
+        <div className="dashboard-bottom">
           <MovementPanel
             movementMap={movementMap}
             students={students}
@@ -233,23 +152,33 @@ export default function App() {
             extraLocations={extraLocations}
           />
           <Gallery images={galleryImages} intervalMs={galleryIntervalMs} />
-        </aside>
+        </div>
+
+        <div className="dashboard-actions">
+          <button
+            type="button"
+            className="dashboard-reset"
+            onClick={handleResetMovement}
+            disabled={!movedCount}
+            aria-label="모든 이동 기록 전체 초기화"
+          >
+            전체 초기화
+          </button>
+        </div>
       </main>
 
-      <MovementOverlay
-        ref={overlayRef}
+      <MovementModal
         student={selectedStudent}
-        position={overlayPosition}
-        mainLocations={mainLocationsForOverlay}
-        onSelect={handleLocationSelect}
-      />
-
-      <MovementExtraPanel
-        ref={extraRef}
-        open={Boolean(selectedStudent && isExtraOpen)}
-        position={extraPosition}
+        currentLocation={selectedMovement?.location}
+        mainLocations={modalLocations}
         extraLocations={extraLocations}
-        onSelect={handleExtraLocationSelect}
+        showExtraLocations={showExtraLocations}
+        onSelect={handleLocationSelect}
+        onReturn={() => {
+          if (!selectedStudent) return;
+          handleReturnStudent(selectedStudent);
+        }}
+        onClose={closeModal}
       />
     </div>
   );

@@ -8,14 +8,14 @@ const parseList = (value: string | undefined) =>
         .filter(Boolean)
     : undefined;
 
-const defaultMain = ['305호', '301호', '체육관', '화장실', '세미나실', '외출', '기타', '복귀', '조기입실'];
+const defaultMain = ['201호', '202호','203호',  '화장실', '외출', '기타', '복귀', '조기입실'];
 const defaultExtra = [
   '기숙사',
   '급식실',
   '보건실',
   '과학실',
-  '201호',
-  '202호',
+  '305호',
+  '301호',
   '203호',
   '디지털 컨텐츠실',
   '대강당',
@@ -39,13 +39,16 @@ const defaultExtra = [
   '비즈쿨실',
   '방송실',
   '시청각실',
-  '귀가',
   '조기 입실',
   '소풍',
   '금요귀가',
   '복도',
   '아이맥실',
+  '귀가',
   '체육관',
+  '운동장',
+  '도서관',
+  'IoT 실',
 ];
 
 export const defaultClassrooms: ClassroomSettings = {

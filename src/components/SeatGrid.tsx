@@ -1,77 +1,102 @@
-import { MouseEvent } from 'react';
-
-import { Student, MovementMap } from '../types';
+import returnIconSrc from '../assets/return-icon.svg';
+import { AppBannerConfig, MovementMap, Student } from '../types';
 
 interface SeatGridProps {
   students: Student[];
   movementMap: MovementMap;
-  onSelect: (student: Student, rect: DOMRect) => void;
   total: number;
   present: number;
-  absent: number;
+  moved: number;
+  quote: AppBannerConfig;
+  onSelect: (student: Student) => void;
+  onReturn: (student: Student) => void;
 }
 
-export function SeatGrid({ students, movementMap, onSelect, total, present, absent }: SeatGridProps) {
+export function SeatGrid({ students, movementMap, total, present, moved, quote, onSelect, onReturn }: SeatGridProps) {
   return (
-    <section className="card seat-card" aria-labelledby="seats-title">
-      <header className="card-header seat-header">
-        <div>
-          <span className="section-eyebrow">Class Live View</span>
-          <h2 className="card-title" id="seats-title">
+    <section className="status-board" aria-labelledby="status-board-title">
+      <header className="status-board__header">
+        <div className="status-board__stats" aria-label="출결 현황">
+          <div className="status-chip">
+            <span className="status-chip__label">학급 인원</span>
+            <span className="status-chip__value">{total}</span>
+          </div>
+          <div className="status-chip">
+            <span className="status-chip__label">재실</span>
+            <span className="status-chip__value">{present}</span>
+          </div>
+          <div className="status-chip">
+            <span className="status-chip__label">이동</span>
+            <span className="status-chip__value">{moved}</span>
+          </div>
+        </div>
+
+        <div className="status-board__title-wrap">
+          <h2 className="status-board__title" id="status-board-title">
             학급 현황
           </h2>
-          <p className="card-subtitle">학생 카드를 선택하면 현재 위치를 바로 기록할 수 있습니다.</p>
         </div>
-        <div className="seat-stats" aria-label="출결 현황">
-          <div className="stat-chip total">
-            <span className="label">학급 인원</span>
-            <span className="value">{total}</span>
-          </div>
-          <div className="stat-chip present">
-            <span className="label">재실</span>
-            <span className="value">{present}</span>
-          </div>
-          <div className="stat-chip absent">
-            <span className="label">이동</span>
-            <span className="value">{absent}</span>
-          </div>
+
+        <div className="status-board__quote" aria-label="오늘의 문구">
+          <p className="status-board__quote-text">{quote.headline}</p>
+          {quote.subline ? <p className="status-board__quote-author">{quote.subline}</p> : null}
         </div>
       </header>
-      <div className="seat-grid">
-        {students.map((student, index) => {
-          const movement = movementMap[student.hakbun];
-          const moved = Boolean(movement && movement.location);
-          const statusLabel = movement?.location ?? '재실';
 
-          const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
-            const rect = event.currentTarget.getBoundingClientRect();
-            onSelect(student, rect);
-          };
+      <div className="student-grid-shell" role="region" aria-label="학생 목록">
+        <div className="student-grid" role="list">
+          {students.map((student) => {
+            const movement = movementMap[student.hakbun];
+            const moved = Boolean(movement && movement.location);
+            const statusLabel = movement?.location ?? '교실';
+            const openModal = () => onSelect(student);
 
-          return (
-            <button
-              key={student.hakbun}
-              className={`seat ${moved ? 'moved' : 'present'}`.trim()}
-              data-hakbun={student.hakbun}
-              type="button"
-              onClick={handleClick}
-            >
-              <div className="seat-topline">
-                <span className="seat-order">{String(index + 1).padStart(2, '0')}</span>
-                <span className={`seat-status ${moved ? 'moved' : 'present'}`}>{statusLabel}</span>
-              </div>
+            return (
+              <article
+                key={student.hakbun}
+                className={`student-card${moved ? ' is-moved' : ''}`}
+                data-hakbun={student.hakbun}
+                role="listitem"
+              >
+                <div
+                  className="student-card__main"
+                  role="button"
+                  tabIndex={0}
+                  onClick={openModal}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      openModal();
+                    }
+                  }}
+                  aria-label={`${student.name} 이동 위치 선택`}
+                >
+                  <div className="student-card__copy">
+                    <span className="student-card__id">{student.hakbun}</span>
+                    <div className="student-card__identity">
+                      <strong className="student-card__name">{student.name}</strong>
+                      <span className="student-card__location">{statusLabel}</span>
+                    </div>
+                  </div>
+                </div>
 
-              <div className="seat-texts">
-                <div className="student-name">{student.name}</div>
-                <small>ID {student.hakbun}</small>
-              </div>
-
-              <div className="seat-footer">
-                <span>{moved ? '이동 위치 기록됨' : '교실 재실 중'}</span>
-              </div>
-            </button>
-          );
-        })}
+                {moved ? (
+                  <button
+                    type="button"
+                    className="student-card__return"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onReturn(student);
+                    }}
+                    aria-label={`${student.name} 돌아가기`}
+                  >
+                    <img src={returnIconSrc} alt="" className="student-card__return-icon" aria-hidden="true" />
+                  </button>
+                ) : null}
+              </article>
+            );
+          })}
+        </div>
       </div>
     </section>
   );
