@@ -51,6 +51,9 @@ https://www.figma.com/design/...
 # 의존성 설치
 npm install
 
+# 원본 이미지에서 갤러리 파생본 생성
+npm run images:generate
+
 # 개발 서버 실행 (http://localhost:5173/check/)
 npm run dev
 
@@ -101,9 +104,27 @@ Cloudflare Pages 대시보드에서 환경 변수를 설정할 수 있습니다:
 - `VITE_TOTAL_STUDENTS`: 전체 학생 수 (기본값: `students.ts` 명단 인원)
 - `VITE_BANNER_HEADLINE`: 배너 헤드라인 (기본값: "넌 충분히 잘하고 있어.")
 - `VITE_BANNER_SUBLINE`: 배너 서브라인 (기본값: "오늘의 응원")
-- `VITE_GALLERY_IMAGES`: 갤러리 이미지 경로 (쉼표로 구분)
+- `VITE_GALLERY_IMAGES`: 비상용 직접 이미지 경로 override (쉼표로 구분). 이 경로를 쓰면 build-time `webp/jpeg` 파생본과 썸네일 최적화는 적용되지 않습니다.
 - `VITE_GALLERY_INTERVAL_MS`: 갤러리 이미지 전환 간격 (밀리초, 기본값: 12000)
 - `VITE_WEB_VITALS_ENDPOINT`: Core Web Vitals 전송 엔드포인트. 설정하지 않으면 브라우저 콘솔에 기록됩니다.
+
+## 갤러리 이미지 파이프라인
+
+- 원본 사진 source of truth: `assets/gallery-source/`
+- 생성 스크립트: `npm run images:generate`
+- 생성 결과:
+  - `src/generated/gallery/`: `main`/`thumb` 파생 이미지
+  - `src/generated/galleryManifest.ts`: 앱에서 읽는 manifest
+- 생성 규칙:
+  - EXIF 회전 반영
+  - 색공간 `sRGB` 정규화
+  - `WebP + JPEG` 동시 생성
+  - 메인 긴 변 최대 `1600px`
+  - 썸네일 긴 변 최대 `240px`
+- 런타임 전략:
+  - 브라우저에서 원본을 다시 압축하지 않음
+  - 첫 메인 이미지만 우선 로드
+  - 다음 슬라이드 1장만 idle 시점에 미리 워밍
 
 ## 성능 검증
 
@@ -136,9 +157,11 @@ check/
 ├── src/
 │   ├── components/      # React 컴포넌트
 │   ├── config/         # 설정 파일 (학생, 시간표, 교실 등)
+│   ├── generated/      # 생성된 갤러리 파생본/manifest
 │   ├── hooks/          # 커스텀 훅
 │   ├── types/          # TypeScript 타입 정의
 │   └── utils/          # 유틸리티 함수
+├── assets/             # 배포하지 않는 원본 자산
 ├── public/              # 정적 파일
 ├── dist/               # 빌드 결과물
 ├── vite.config.ts      # Vite 설정

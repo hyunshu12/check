@@ -26,3 +26,15 @@ export interface AppBannerConfig {
   subline?: string;
 }
 
+export interface GalleryImageVariant {
+  webpSrc?: string;
+  jpegSrc: string;
+  width: number;
+  height: number;
+}
+
+export interface GalleryImageAsset {
+  id: string;
+  main: GalleryImageVariant;
+  thumb: GalleryImageVariant;
+}

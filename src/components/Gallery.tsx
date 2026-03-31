@@ -1,14 +1,48 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 
+import type { GalleryImageAsset, GalleryImageVariant } from '../types';
+
 interface GalleryProps {
-  images: string[];
+  images: GalleryImageAsset[];
   intervalMs: number;
 }
 
+const idleFallbackDeadline = (): IdleDeadline => ({
+  didTimeout: false,
+  timeRemaining: () => 0
+});
+
+const renderPicture = (
+  variant: GalleryImageVariant,
+  alt: string,
+  imageClassName: string,
+  pictureClassName: string,
+  options?: {
+    loading?: 'eager' | 'lazy';
+    fetchPriority?: 'high' | 'auto' | 'low';
+    decoding?: 'async' | 'sync' | 'auto';
+  }
+) => (
+  <picture className={pictureClassName}>
+    {variant.webpSrc ? <source srcSet={variant.webpSrc} type="image/webp" /> : null}
+    <img
+      src={variant.jpegSrc}
+      alt={alt}
+      className={imageClassName}
+      width={variant.width}
+      height={variant.height}
+      decoding={options?.decoding ?? 'async'}
+      loading={options?.loading}
+      fetchPriority={options?.fetchPriority}
+    />
+  </picture>
+);
+
 export const Gallery = memo(function Gallery({ images, intervalMs }: GalleryProps) {
-  const validImages = useMemo(() => images.filter(Boolean), [images]);
+  const validImages = useMemo(() => images.filter((image) => image.main?.jpegSrc), [images]);
   const [index, setIndex] = useState(0);
   const timerRef = useRef<number>();
+  const prewarmHandleRef = useRef<number>();
 
   const hasMultiple = validImages.length > 1;
   const previewIndices = useMemo(() => {
@@ -32,6 +66,33 @@ export const Gallery = memo(function Gallery({ images, intervalMs }: GalleryProp
   useEffect(() => {
     setIndex(0);
   }, [validImages.length]);
+
+  useEffect(() => {
+    if (validImages.length < 2) return;
+
+    const nextImage = validImages[(index + 1) % validImages.length];
+    const scheduleIdle = window.requestIdleCallback
+      ? window.requestIdleCallback.bind(window)
+      : (callback: IdleRequestCallback) =>
+          window.setTimeout(() => callback(idleFallbackDeadline()), 180);
+    const cancelIdle = window.cancelIdleCallback
+      ? window.cancelIdleCallback.bind(window)
+      : (handle: number) => window.clearTimeout(handle);
+
+    prewarmHandleRef.current = scheduleIdle(() => {
+      const preloadCandidate = nextImage.main.webpSrc ?? nextImage.main.jpegSrc;
+      const prewarmImage = new Image();
+      prewarmImage.decoding = 'async';
+      prewarmImage.src = preloadCandidate;
+      void prewarmImage.decode?.().catch(() => undefined);
+    }, { timeout: Math.min(1000, Math.max(300, Math.floor(intervalMs / 3))) });
+
+    return () => {
+      if (prewarmHandleRef.current) {
+        cancelIdle(prewarmHandleRef.current);
+      }
+    };
+  }, [index, intervalMs, validImages]);
 
   const resetTimer = () => {
     if (!timerRef.current) return;
@@ -68,19 +129,18 @@ export const Gallery = memo(function Gallery({ images, intervalMs }: GalleryProp
   }
 
   return (
-    <section className={`gallery-panel${hasMultiple ? '' : ' gallery-panel--single'}`} aria-labelledby="gallery-title">
+      <section className={`gallery-panel${hasMultiple ? '' : ' gallery-panel--single'}`} aria-labelledby="gallery-title">
       <div className="gallery-panel__main">
-        <img
-          src={validImages[index]}
-          alt={`갤러리 이미지 ${index + 1}`}
-          className="gallery-panel__main-image"
-          decoding="async"
-        />
+        {renderPicture(validImages[index].main, `갤러리 이미지 ${index + 1}`, 'gallery-panel__main-image', 'gallery-panel__main-picture', {
+          decoding: 'async',
+          loading: 'eager',
+          fetchPriority: index === 0 ? 'high' : 'auto'
+        })}
         <div className="gallery-panel__main-glow" aria-hidden="true" />
 
         <div className="gallery-panel__meta">
           <h2 className="gallery-panel__title" id="gallery-title">
-            교실 스케치
+            EB 갤러리
           </h2>
           <p className="gallery-panel__caption">
             {index + 1} / {validImages.length}
@@ -91,7 +151,7 @@ export const Gallery = memo(function Gallery({ images, intervalMs }: GalleryProp
           <div className="gallery-panel__thumbs" role="tablist" aria-label="갤러리 인디케이터">
             {previewIndices.map((previewIndex) => (
               <button
-                key={`${previewIndex}-${validImages[previewIndex]}`}
+                key={`${previewIndex}-${validImages[previewIndex].id}`}
                 type="button"
                 role="tab"
                 aria-selected={previewIndex === index}
@@ -102,12 +162,17 @@ export const Gallery = memo(function Gallery({ images, intervalMs }: GalleryProp
                 }}
                 aria-label={`${previewIndex + 1}번째 이미지로 이동`}
               >
-                <img
-                  src={validImages[previewIndex]}
-                  alt={`갤러리 미리보기 ${previewIndex + 1}`}
-                  decoding="async"
-                  loading="lazy"
-                />
+                {renderPicture(
+                  validImages[previewIndex].thumb,
+                  `갤러리 미리보기 ${previewIndex + 1}`,
+                  'gallery-thumb__image',
+                  'gallery-thumb__picture',
+                  {
+                    decoding: 'async',
+                    loading: 'lazy',
+                    fetchPriority: 'low'
+                  }
+                )}
               </button>
             ))}
           </div>

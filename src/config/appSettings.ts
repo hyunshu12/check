@@ -1,4 +1,5 @@
-import { AppBannerConfig } from '../types';
+import { generatedGalleryAssets } from '../generated/galleryManifest';
+import { AppBannerConfig, GalleryImageAsset } from '../types';
 
 const toNumber = (value: string | undefined) => {
   if (!value) return undefined;
@@ -52,36 +53,32 @@ const normalizeImageSrc = (src: string) => {
   return resolveWithBase(relativePath);
 };
 
-const defaultGalleryImages = [
-  'images/eb1.jpeg',
-  'images/eb2.jpeg',
-  'images/eb3.jpeg',
-  'images/eb4.jpeg',
-  'images/eb5.jpeg',
-  'images/eb6.jpeg',
-  'images/eb7.jpeg',
-  'images/eb8.jpeg',
-  'images/eb9.jpeg',
-  'images/eb10.jpeg',
-  'images/eb11.jpeg',
-  'images/eb12.jpeg',
-  'images/eb13.jpeg',
-  'images/eb14.jpeg',
-  'images/eb15.jpeg',
-  'images/eb16.jpeg',
-  'images/eb17.jpeg',
-  'images/eb18.jpeg',
-  'images/eb19.jpeg',
-  'images/eb20.jpeg',
-  'images/eb21.jpeg',
-].map((src) => normalizeImageSrc(src));
+const OVERRIDE_MAIN_WIDTH = 1600;
+const OVERRIDE_MAIN_HEIGHT = 900;
+const OVERRIDE_THUMB_WIDTH = 240;
+const OVERRIDE_THUMB_HEIGHT = 135;
+
+const toOverrideGalleryAsset = (src: string, index: number): GalleryImageAsset => ({
+  id: `override-${index + 1}`,
+  main: {
+    jpegSrc: src,
+    width: OVERRIDE_MAIN_WIDTH,
+    height: OVERRIDE_MAIN_HEIGHT
+  },
+  thumb: {
+    jpegSrc: src,
+    width: OVERRIDE_THUMB_WIDTH,
+    height: OVERRIDE_THUMB_HEIGHT
+  }
+});
 
 const galleryImagesFromEnv = import.meta.env.VITE_GALLERY_IMAGES
   ?.split(',')
   .map((src: string) => normalizeImageSrc(src))
-  .filter(Boolean);
+  .filter(Boolean)
+  .map((src: string, index: number) => toOverrideGalleryAsset(src, index));
 
-export const galleryImages = galleryImagesFromEnv && galleryImagesFromEnv.length ? galleryImagesFromEnv : defaultGalleryImages;
+export const galleryImages = galleryImagesFromEnv && galleryImagesFromEnv.length ? galleryImagesFromEnv : generatedGalleryAssets;
 const galleryIntervalFromEnv = toNumber(import.meta.env.VITE_GALLERY_INTERVAL_MS);
 export const galleryIntervalMs = galleryIntervalFromEnv ?? 12000;
 
@@ -89,4 +86,3 @@ export const bannerConfig: AppBannerConfig = {
   headline: bannerHeadline,
   subline: bannerSubline
 };
-
