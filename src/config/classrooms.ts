@@ -8,7 +8,7 @@ const parseList = (value: string | undefined) =>
         .filter(Boolean)
     : undefined;
 
-const defaultMain = ['201호', '202호','203호',  '화장실', '외출', '기타', '복귀', '조기입실'];
+const defaultMain = ['201호', '202호','203호','방송실','화장실', '외출', '기타', '복귀', '조기입실'];
 const defaultExtra = [
   '기숙사',
   '급식실',
@@ -39,6 +39,7 @@ const defaultExtra = [
   '비즈쿨실',
   '방송실',
   '시청각실',
+  '세미나실',
   '조기 입실',
   '소풍',
   '금요귀가',
