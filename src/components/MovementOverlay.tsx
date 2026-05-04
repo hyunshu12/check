@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Student } from '../types';
 
 interface MovementModalProps {
@@ -11,7 +12,7 @@ interface MovementModalProps {
   onClose: () => void;
 }
 
-export function MovementModal({
+export const MovementModal = memo(function MovementModal({
   student,
   currentLocation,
   mainLocations,
@@ -97,4 +98,4 @@ export function MovementModal({
       ) : null}
     </div>
   );
-}
+});

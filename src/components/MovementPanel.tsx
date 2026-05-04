@@ -38,8 +38,14 @@ export const MovementPanel = memo(function MovementPanel({ movementMap, students
       result.get(groupKey)?.items.push({ student, location: record.location });
     });
 
+    result.forEach((entry) => {
+      entry.items.sort(
+        (a, b) => (studentOrder.get(a.student.hakbun) ?? 0) - (studentOrder.get(b.student.hakbun) ?? 0)
+      );
+    });
+
     return result;
-  }, [movementMap, studentMap]);
+  }, [movementMap, studentMap, studentOrder]);
 
   const orderedGroupKeys = useMemo(() => {
     const keys: string[] = [];
@@ -81,18 +87,15 @@ export const MovementPanel = memo(function MovementPanel({ movementMap, students
             {orderedGroupKeys.map((groupKey) => {
               const group = groups.get(groupKey);
               if (!group) return null;
-              const sortedItems = [...group.items].sort(
-                (a, b) => (studentOrder.get(a.student.hakbun) ?? 0) - (studentOrder.get(b.student.hakbun) ?? 0)
-              );
 
               return (
                 <article key={groupKey} className="movement-lane">
                   <div className="movement-lane__header">
                     <span className="movement-lane__label">{group.label}</span>
-                    <span className="movement-lane__count">{sortedItems.length}명</span>
+                    <span className="movement-lane__count">{group.items.length}명</span>
                   </div>
                   <div className="movement-lane__cards">
-                    {sortedItems.map(({ student, location }) => {
+                    {group.items.map(({ student, location }) => {
                       return (
                         <div key={student.hakbun} className="movement-lane__card" title={location}>
                           <div className="movement-lane__identity">

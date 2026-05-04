@@ -16,6 +16,7 @@ export function usePersistentState<T>(key: string, defaultValue: T) {
   });
 
   const prevKeyRef = useRef(key);
+  const writeHandleRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!isBrowser) return;
@@ -25,11 +26,39 @@ export function usePersistentState<T>(key: string, defaultValue: T) {
       prevKeyRef.current = key;
     }
 
-    try {
-      window.localStorage.setItem(key, JSON.stringify(value));
-    } catch (error) {
-      console.warn(`[usePersistentState] failed to store ${key}`, error);
+    const scheduleIdle = (cb: () => void): number => {
+      if (typeof window.requestIdleCallback === 'function') {
+        return window.requestIdleCallback(cb, { timeout: 1000 }) as unknown as number;
+      }
+      return window.setTimeout(cb, 0);
+    };
+    const cancelIdle = (handle: number) => {
+      if (typeof window.cancelIdleCallback === 'function') {
+        window.cancelIdleCallback(handle);
+      } else {
+        window.clearTimeout(handle);
+      }
+    };
+
+    if (writeHandleRef.current !== null) {
+      cancelIdle(writeHandleRef.current);
     }
+
+    writeHandleRef.current = scheduleIdle(() => {
+      writeHandleRef.current = null;
+      try {
+        window.localStorage.setItem(key, JSON.stringify(value));
+      } catch (error) {
+        console.warn(`[usePersistentState] failed to store ${key}`, error);
+      }
+    });
+
+    return () => {
+      if (writeHandleRef.current !== null) {
+        cancelIdle(writeHandleRef.current);
+        writeHandleRef.current = null;
+      }
+    };
   }, [key, value]);
 
   return [value, setValue] as const;

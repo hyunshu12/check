@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { DashboardHero } from './components/DashboardHero';
 import { Gallery } from './components/Gallery';
@@ -17,6 +17,10 @@ const MOVEMENT_STORAGE_KEY = 'movementMap';
 export default function App() {
   const [movementMap, setMovementMap] = usePersistentState<MovementMap>(MOVEMENT_STORAGE_KEY, {});
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const selectedStudentRef = useRef<Student | null>(null);
+  useEffect(() => {
+    selectedStudentRef.current = selectedStudent;
+  }, [selectedStudent]);
   const [showExtraLocations, setShowExtraLocations] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isFullscreenSupported, setIsFullscreenSupported] = useState(true);
@@ -72,20 +76,27 @@ export default function App() {
   }, [closeModal, setMovementMap]);
 
   const handleLocationSelect = useCallback((location: string) => {
-    if (!selectedStudent) return;
+    const student = selectedStudentRef.current;
+    if (!student) return;
     if (location === '기타') {
       setShowExtraLocations((prev) => !prev);
       return;
     }
-    applyMovement(selectedStudent, location);
-  }, [applyMovement, selectedStudent]);
+    applyMovement(student, location);
+  }, [applyMovement]);
 
   const handleReturnStudent = useCallback((student: Student) => {
     setMovementMap((prev) => upsertMovement(prev, student.hakbun, null));
-    if (selectedStudent?.hakbun === student.hakbun) {
+    if (selectedStudentRef.current?.hakbun === student.hakbun) {
       closeModal();
     }
-  }, [closeModal, selectedStudent?.hakbun, setMovementMap]);
+  }, [closeModal, setMovementMap]);
+
+  const handleModalReturn = useCallback(() => {
+    const student = selectedStudentRef.current;
+    if (!student) return;
+    handleReturnStudent(student);
+  }, [handleReturnStudent]);
 
   const handleResetMovement = useCallback(() => {
     if (!movedCount) return;
@@ -133,6 +144,42 @@ export default function App() {
 
     document.addEventListener('fullscreenchange', syncFullscreenState);
     return () => document.removeEventListener('fullscreenchange', syncFullscreenState);
+  }, []);
+
+  useEffect(() => {
+    const IDLE_MS = 60_000;
+    let timerId: number | null = null;
+
+    const scrollToTop = () => {
+      const scroller = document.scrollingElement ?? document.documentElement;
+      if (scroller.scrollTop > 0 || window.scrollY > 0) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    };
+
+    const reset = () => {
+      if (timerId !== null) window.clearTimeout(timerId);
+      timerId = window.setTimeout(scrollToTop, IDLE_MS);
+    };
+
+    const events: Array<keyof WindowEventMap> = [
+      'pointerdown',
+      'pointermove',
+      'touchstart',
+      'keydown',
+      'wheel',
+      'scroll'
+    ];
+    events.forEach((event) =>
+      window.addEventListener(event, reset, { passive: true })
+    );
+
+    reset();
+
+    return () => {
+      if (timerId !== null) window.clearTimeout(timerId);
+      events.forEach((event) => window.removeEventListener(event, reset));
+    };
   }, []);
 
   return (
@@ -191,10 +238,7 @@ export default function App() {
         extraLocations={extraLocations}
         showExtraLocations={showExtraLocations}
         onSelect={handleLocationSelect}
-        onReturn={() => {
-          if (!selectedStudent) return;
-          handleReturnStudent(selectedStudent);
-        }}
+        onReturn={handleModalReturn}
         onClose={closeModal}
       />
     </div>

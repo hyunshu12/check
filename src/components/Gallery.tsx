@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { GalleryImageAsset, GalleryImageVariant } from '../types';
 
@@ -57,9 +57,33 @@ export const Gallery = memo(function Gallery({ images, intervalMs }: GalleryProp
       setIndex((prev) => (prev + 1) % validImages.length);
     };
 
-    timerRef.current = window.setInterval(tick, intervalMs);
+    const start = () => {
+      if (timerRef.current) return;
+      timerRef.current = window.setInterval(tick, intervalMs);
+    };
+    const stop = () => {
+      if (timerRef.current) {
+        window.clearInterval(timerRef.current);
+        timerRef.current = undefined;
+      }
+    };
+
+    if (!document.hidden) {
+      start();
+    }
+
+    const handleVisibility = () => {
+      if (document.hidden) {
+        stop();
+      } else {
+        start();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
     return () => {
-      if (timerRef.current) window.clearInterval(timerRef.current);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      stop();
     };
   }, [intervalMs, validImages.length]);
 
@@ -94,25 +118,28 @@ export const Gallery = memo(function Gallery({ images, intervalMs }: GalleryProp
     };
   }, [index, intervalMs, validImages]);
 
-  const resetTimer = () => {
-    if (!timerRef.current) return;
-    window.clearInterval(timerRef.current);
+  const resetTimer = useCallback(() => {
+    if (timerRef.current) {
+      window.clearInterval(timerRef.current);
+      timerRef.current = undefined;
+    }
+    if (!validImages.length || document.hidden) return;
     timerRef.current = window.setInterval(() => {
       setIndex((prev) => (prev + 1) % validImages.length);
     }, intervalMs);
-  };
+  }, [intervalMs, validImages.length]);
 
-  const handlePrev = () => {
+  const handlePrev = useCallback(() => {
     if (!validImages.length) return;
     setIndex((prev) => (prev - 1 + validImages.length) % validImages.length);
     resetTimer();
-  };
+  }, [resetTimer, validImages.length]);
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     if (!validImages.length) return;
     setIndex((prev) => (prev + 1) % validImages.length);
     resetTimer();
-  };
+  }, [resetTimer, validImages.length]);
 
   if (!validImages.length) {
     return (

@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 
 import returnIconSrc from '../assets/return-icon.svg';
 import { AppBannerConfig, MovementMap, Student } from '../types';
@@ -13,6 +13,80 @@ interface SeatGridProps {
   onSelect: (student: Student) => void;
   onReturn: (student: Student) => void;
 }
+
+interface StudentCardProps {
+  student: Student;
+  isMoved: boolean;
+  statusLabel: string;
+  onSelect: (student: Student) => void;
+  onReturn: (student: Student) => void;
+}
+
+const StudentCard = memo(function StudentCard({
+  student,
+  isMoved,
+  statusLabel,
+  onSelect,
+  onReturn
+}: StudentCardProps) {
+  const handleOpen = useCallback(() => {
+    onSelect(student);
+  }, [onSelect, student]);
+
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        onSelect(student);
+      }
+    },
+    [onSelect, student]
+  );
+
+  const handleReturnClick = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      event.stopPropagation();
+      onReturn(student);
+    },
+    [onReturn, student]
+  );
+
+  return (
+    <article
+      className={`student-card${isMoved ? ' is-moved' : ''}`}
+      data-hakbun={student.hakbun}
+      role="listitem"
+    >
+      <div
+        className="student-card__main"
+        role="button"
+        tabIndex={0}
+        onClick={handleOpen}
+        onKeyDown={handleKeyDown}
+        aria-label={`${student.name} 이동 위치 선택`}
+      >
+        <div className="student-card__copy">
+          <span className="student-card__id">{student.hakbun}</span>
+          <div className="student-card__identity">
+            <strong className="student-card__name">{student.name}</strong>
+            <span className="student-card__location">{statusLabel}</span>
+          </div>
+        </div>
+      </div>
+
+      {isMoved ? (
+        <button
+          type="button"
+          className="student-card__return"
+          onClick={handleReturnClick}
+          aria-label={`${student.name} 돌아가기`}
+        >
+          <img src={returnIconSrc} alt="" className="student-card__return-icon" aria-hidden="true" />
+        </button>
+      ) : null}
+    </article>
+  );
+});
 
 export const SeatGrid = memo(function SeatGrid({
   students,
@@ -58,53 +132,17 @@ export const SeatGrid = memo(function SeatGrid({
         <div className="student-grid" role="list">
           {students.map((student) => {
             const movement = movementMap[student.hakbun];
-            const moved = Boolean(movement && movement.location);
+            const isMoved = Boolean(movement && movement.location);
             const statusLabel = movement?.location ?? '교실';
-            const openModal = () => onSelect(student);
-
             return (
-              <article
+              <StudentCard
                 key={student.hakbun}
-                className={`student-card${moved ? ' is-moved' : ''}`}
-                data-hakbun={student.hakbun}
-                role="listitem"
-              >
-                <div
-                  className="student-card__main"
-                  role="button"
-                  tabIndex={0}
-                  onClick={openModal}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault();
-                      openModal();
-                    }
-                  }}
-                  aria-label={`${student.name} 이동 위치 선택`}
-                >
-                  <div className="student-card__copy">
-                    <span className="student-card__id">{student.hakbun}</span>
-                    <div className="student-card__identity">
-                      <strong className="student-card__name">{student.name}</strong>
-                      <span className="student-card__location">{statusLabel}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {moved ? (
-                  <button
-                    type="button"
-                    className="student-card__return"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      onReturn(student);
-                    }}
-                    aria-label={`${student.name} 돌아가기`}
-                  >
-                    <img src={returnIconSrc} alt="" className="student-card__return-icon" aria-hidden="true" />
-                  </button>
-                ) : null}
-              </article>
+                student={student}
+                isMoved={isMoved}
+                statusLabel={statusLabel}
+                onSelect={onSelect}
+                onReturn={onReturn}
+              />
             );
           })}
         </div>
