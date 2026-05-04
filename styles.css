@@ -693,8 +693,9 @@ img {
 .movement-modal__backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(4, 4, 4, 0.72);
-  backdrop-filter: blur(10px);
+  background: rgba(4, 4, 4, 0.78);
+  backdrop-filter: blur(4px);
+  will-change: backdrop-filter;
 }
 
 .movement-modal__panel {
