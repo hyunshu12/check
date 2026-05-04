@@ -11,7 +11,7 @@ const totalFromEnv = toNumber(import.meta.env.VITE_TOTAL_STUDENTS);
 export const TOTAL_STUDENTS = totalFromEnv;
 
 const bannerHeadline = import.meta.env.VITE_BANNER_HEADLINE ?? '넌 충분히 잘하고 있어.';
-const bannerSubline = import.meta.env.VITE_BANNER_SUBLINE ?? '오늘의 응원';
+const bannerSubline = import.meta.env.VITE_BANNER_SUBLINE ?? '수학여행 야르';
 
 const baseUrl = import.meta.env.BASE_URL ?? '/';
 
