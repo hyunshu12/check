@@ -25,6 +25,18 @@ jobs:
       - name: Build
         run: npm run build
       
+      - name: Ensure Cloudflare Pages project exists
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if npx -y wrangler@3 pages project list --json 2>/dev/null | grep -q '"name": *"beta-classroom-monitor"'; then
+            echo "Project already exists."
+          else
+            echo "Creating Cloudflare Pages project beta-classroom-monitor..."
+            npx -y wrangler@3 pages project create beta-classroom-monitor --production-branch=main
+          fi
+
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
