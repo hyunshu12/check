@@ -30,12 +30,19 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          if npx -y wrangler@3 pages project list --json 2>/dev/null | grep -q '"name": *"beta-classroom-monitor"'; then
-            echo "Project already exists."
-          else
-            echo "Creating Cloudflare Pages project beta-classroom-monitor..."
-            npx -y wrangler@3 pages project create beta-classroom-monitor --production-branch=main
+          set +e
+          out=$(npx -y wrangler@3 pages project create beta-classroom-monitor --production-branch=main 2>&1)
+          status=$?
+          echo "$out"
+          if [ $status -eq 0 ]; then
+            exit 0
           fi
+          if echo "$out" | grep -qi "already exists"; then
+            echo "Project already exists, continuing."
+            exit 0
+          fi
+          echo "Project creation failed for an unexpected reason." >&2
+          exit $status
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
