@@ -182,6 +182,29 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    if (typeof performance === 'undefined') return;
+    const sample = () => {
+      const memInfo = (performance as unknown as { memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number } }).memory;
+      if (memInfo) {
+        const used = (memInfo.usedJSHeapSize / 1048576).toFixed(1);
+        const total = (memInfo.totalJSHeapSize / 1048576).toFixed(1);
+        const limit = Math.round(memInfo.jsHeapSizeLimit / 1048576);
+        console.info(`[heap-probe] used=${used}MB total=${total}MB limit=${limit}MB at ${new Date().toISOString()}`);
+      }
+      const measureFn = (performance as unknown as { measureUserAgentSpecificMemory?: () => Promise<{ bytes: number }> }).measureUserAgentSpecificMemory;
+      if (typeof measureFn === 'function') {
+        measureFn.call(performance).then((r) => {
+          const mb = (r.bytes / 1048576).toFixed(1);
+          console.info(`[heap-probe] uaSpecificMemory=${mb}MB`);
+        }).catch(() => undefined);
+      }
+    };
+    sample();
+    const id = window.setInterval(sample, 30 * 60 * 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
   return (
     <div id="app" className="skrr-app">
       <DashboardHero />

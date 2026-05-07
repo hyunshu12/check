@@ -693,9 +693,12 @@ img {
 .movement-modal__backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(4, 4, 4, 0.78);
-  backdrop-filter: blur(4px);
-  will-change: backdrop-filter;
+  background: rgba(4, 4, 4, 0.86);
+}
+
+.movement-modal:not(.is-open) {
+  content-visibility: hidden;
+  contain-intrinsic-size: 0;
 }
 
 .movement-modal__panel {

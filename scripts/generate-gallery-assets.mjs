@@ -13,8 +13,9 @@ const PUBLIC_IMAGE_EXTENSIONS = /\.(avif|webp|png|jpe?g)$/i;
 const SOURCE_IMAGE_EXTENSIONS = /\.(jpe?g|png)$/i;
 
 const MAIN_MAX_EDGE = 1600;
+const MAIN_SMALL_MAX_EDGE = 960;
 const THUMB_MAX_EDGE = 240;
-const WEBP_QUALITY = 78;
+const WEBP_QUALITY = 72;
 const JPEG_QUALITY = 82;
 
 const collator = new Intl.Collator('en', { numeric: true, sensitivity: 'base' });
@@ -102,6 +103,12 @@ for (const fileName of sourceFiles) {
     fit: 'inside',
     withoutEnlargement: true
   });
+  const mainSmallBase = sourcePipeline.clone().resize({
+    width: MAIN_SMALL_MAX_EDGE,
+    height: MAIN_SMALL_MAX_EDGE,
+    fit: 'inside',
+    withoutEnlargement: true
+  });
   const thumbBase = sourcePipeline.clone().resize({
     width: THUMB_MAX_EDGE,
     height: THUMB_MAX_EDGE,
@@ -111,6 +118,7 @@ for (const fileName of sourceFiles) {
 
   const mainWebpPath = path.join(OUTPUT_DIR, `${id}-main.webp`);
   const mainJpegPath = path.join(OUTPUT_DIR, `${id}-main.jpeg`);
+  const mainSmallWebpPath = path.join(OUTPUT_DIR, `${id}-main-small.webp`);
   const thumbWebpPath = path.join(OUTPUT_DIR, `${id}-thumb.webp`);
   const thumbJpegPath = path.join(OUTPUT_DIR, `${id}-thumb.jpeg`);
 
@@ -122,6 +130,10 @@ for (const fileName of sourceFiles) {
     .clone()
     .jpeg({ quality: JPEG_QUALITY, progressive: true, mozjpeg: true })
     .toFile(mainJpegPath);
+  const mainSmallWebpInfo = await mainSmallBase
+    .clone()
+    .webp({ quality: 78, effort: 5 })
+    .toFile(mainSmallWebpPath);
   const thumbWebpInfo = await thumbBase
     .clone()
     .webp({ quality: WEBP_QUALITY, effort: 5 })
@@ -132,14 +144,17 @@ for (const fileName of sourceFiles) {
     .toFile(thumbJpegPath);
 
   assertNotBlackCollapsed(id, 'main jpeg', sourceStats, await sharp(mainJpegPath).stats());
+  assertNotBlackCollapsed(id, 'main small webp', sourceStats, await sharp(mainSmallWebpPath).stats());
   assertNotBlackCollapsed(id, 'thumb jpeg', sourceStats, await sharp(thumbJpegPath).stats());
 
   manifestEntries.push({
     id,
     main: {
       webpImport: `${id}MainWebp`,
+      webpSmallImport: `${id}MainSmallWebp`,
       jpegImport: `${id}MainJpeg`,
       width: mainJpegInfo.width,
+      widthSmall: mainSmallWebpInfo.width,
       height: mainJpegInfo.height
     },
     thumb: {
@@ -153,6 +168,8 @@ for (const fileName of sourceFiles) {
   console.log(
     `[gallery-generate] ${id} main ${mainJpegInfo.width}x${mainJpegInfo.height} ` +
       `${(statSync(mainWebpPath).size / 1024).toFixed(1)} KB(webp) / ${(statSync(mainJpegPath).size / 1024).toFixed(1)} KB(jpeg), ` +
+      `main-small ${mainSmallWebpInfo.width}x${mainSmallWebpInfo.height} ` +
+      `${(statSync(mainSmallWebpPath).size / 1024).toFixed(1)} KB(webp), ` +
       `thumb ${(statSync(thumbWebpPath).size / 1024).toFixed(1)} KB(webp) / ${(statSync(thumbJpegPath).size / 1024).toFixed(1)} KB(jpeg)`
   );
 }
@@ -162,13 +179,14 @@ const assetBlocks = [];
 
 for (const entry of manifestEntries) {
   importLines.push(`import ${entry.main.webpImport} from './gallery/${entry.id}-main.webp';`);
+  importLines.push(`import ${entry.main.webpSmallImport} from './gallery/${entry.id}-main-small.webp';`);
   importLines.push(`import ${entry.main.jpegImport} from './gallery/${entry.id}-main.jpeg';`);
   importLines.push(`import ${entry.thumb.webpImport} from './gallery/${entry.id}-thumb.webp';`);
   importLines.push(`import ${entry.thumb.jpegImport} from './gallery/${entry.id}-thumb.jpeg';`);
 
   assetBlocks.push(`  {
     id: '${entry.id}',
-    main: { webpSrc: ${entry.main.webpImport}, jpegSrc: ${entry.main.jpegImport}, width: ${entry.main.width}, height: ${entry.main.height} },
+    main: { webpSrc: ${entry.main.webpImport}, webpSrcSmall: ${entry.main.webpSmallImport}, jpegSrc: ${entry.main.jpegImport}, width: ${entry.main.width}, widthSmall: ${entry.main.widthSmall}, height: ${entry.main.height} },
     thumb: { webpSrc: ${entry.thumb.webpImport}, jpegSrc: ${entry.thumb.jpegImport}, width: ${entry.thumb.width}, height: ${entry.thumb.height} }
   }`);
 }
