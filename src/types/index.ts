@@ -28,8 +28,10 @@ export interface AppBannerConfig {
 
 export interface GalleryImageVariant {
   webpSrc?: string;
+  webpSrcSmall?: string;
   jpegSrc: string;
   width: number;
+  widthSmall?: number;
   height: number;
 }
 

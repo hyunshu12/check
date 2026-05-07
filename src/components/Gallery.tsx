@@ -7,11 +7,6 @@ interface GalleryProps {
   intervalMs: number;
 }
 
-const idleFallbackDeadline = (): IdleDeadline => ({
-  didTimeout: false,
-  timeRemaining: () => 0
-});
-
 const renderPicture = (
   variant: GalleryImageVariant,
   alt: string,
@@ -21,28 +16,38 @@ const renderPicture = (
     loading?: 'eager' | 'lazy';
     fetchPriority?: 'high' | 'auto' | 'low';
     decoding?: 'async' | 'sync' | 'auto';
+    sizes?: string;
   }
-) => (
-  <picture className={pictureClassName}>
-    {variant.webpSrc ? <source srcSet={variant.webpSrc} type="image/webp" /> : null}
-    <img
-      src={variant.jpegSrc}
-      alt={alt}
-      className={imageClassName}
-      width={variant.width}
-      height={variant.height}
-      decoding={options?.decoding ?? 'async'}
-      loading={options?.loading}
-      fetchPriority={options?.fetchPriority}
-    />
-  </picture>
-);
+) => {
+  const webpSrcSet = variant.webpSrc
+    ? variant.webpSrcSmall && variant.widthSmall
+      ? `${variant.webpSrcSmall} ${variant.widthSmall}w, ${variant.webpSrc} ${variant.width}w`
+      : variant.webpSrc
+    : null;
+  return (
+    <picture className={pictureClassName}>
+      {webpSrcSet ? (
+        <source srcSet={webpSrcSet} sizes={options?.sizes} type="image/webp" />
+      ) : null}
+      <img
+        src={variant.jpegSrc}
+        alt={alt}
+        className={imageClassName}
+        width={variant.width}
+        height={variant.height}
+        decoding={options?.decoding ?? 'async'}
+        loading={options?.loading}
+        fetchPriority={options?.fetchPriority}
+      />
+    </picture>
+  );
+};
 
 export const Gallery = memo(function Gallery({ images, intervalMs }: GalleryProps) {
   const validImages = useMemo(() => images.filter((image) => image.main?.jpegSrc), [images]);
   const [index, setIndex] = useState(0);
   const timerRef = useRef<number>();
-  const prewarmHandleRef = useRef<number>();
+  const preloadLinkRef = useRef<HTMLLinkElement | null>(null);
 
   const hasMultiple = validImages.length > 1;
   const previewIndices = useMemo(() => {
@@ -93,30 +98,37 @@ export const Gallery = memo(function Gallery({ images, intervalMs }: GalleryProp
 
   useEffect(() => {
     if (validImages.length < 2) return;
-
     const nextImage = validImages[(index + 1) % validImages.length];
-    const scheduleIdle = window.requestIdleCallback
-      ? window.requestIdleCallback.bind(window)
-      : (callback: IdleRequestCallback) =>
-          window.setTimeout(() => callback(idleFallbackDeadline()), 180);
-    const cancelIdle = window.cancelIdleCallback
-      ? window.cancelIdleCallback.bind(window)
-      : (handle: number) => window.clearTimeout(handle);
+    const nextWebp = nextImage.main.webpSrc ?? nextImage.main.jpegSrc;
 
-    prewarmHandleRef.current = scheduleIdle(() => {
-      const preloadCandidate = nextImage.main.webpSrc ?? nextImage.main.jpegSrc;
-      const prewarmImage = new Image();
-      prewarmImage.decoding = 'async';
-      prewarmImage.src = preloadCandidate;
-      void prewarmImage.decode?.().catch(() => undefined);
-    }, { timeout: Math.min(1000, Math.max(300, Math.floor(intervalMs / 3))) });
+    // Remove the previous preload (Chromium ignores href mutations on existing preload links).
+    if (preloadLinkRef.current) {
+      preloadLinkRef.current.remove();
+      preloadLinkRef.current = null;
+    }
+
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = 'image';
+    link.href = nextWebp;
+    if (nextImage.main.webpSrcSmall && nextImage.main.widthSmall) {
+      link.setAttribute(
+        'imagesrcset',
+        `${nextImage.main.webpSrcSmall} ${nextImage.main.widthSmall}w, ${nextImage.main.webpSrc} ${nextImage.main.width}w`
+      );
+      link.setAttribute('imagesizes', '(max-width: 1024px) 960px, 1600px');
+    }
+    link.setAttribute('fetchpriority', 'low');
+    document.head.appendChild(link);
+    preloadLinkRef.current = link;
 
     return () => {
-      if (prewarmHandleRef.current) {
-        cancelIdle(prewarmHandleRef.current);
+      if (preloadLinkRef.current === link) {
+        link.remove();
+        preloadLinkRef.current = null;
       }
     };
-  }, [index, intervalMs, validImages]);
+  }, [index, validImages]);
 
   const resetTimer = useCallback(() => {
     if (timerRef.current) {
@@ -161,7 +173,8 @@ export const Gallery = memo(function Gallery({ images, intervalMs }: GalleryProp
         {renderPicture(validImages[index].main, `갤러리 이미지 ${index + 1}`, 'gallery-panel__main-image', 'gallery-panel__main-picture', {
           decoding: 'async',
           loading: 'eager',
-          fetchPriority: index === 0 ? 'high' : 'auto'
+          fetchPriority: index === 0 ? 'high' : 'auto',
+          sizes: '(max-width: 1024px) 960px, 1600px'
         })}
         <div className="gallery-panel__main-glow" aria-hidden="true" />
 
