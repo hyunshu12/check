@@ -5,6 +5,7 @@ import { Student } from '../types';
 interface MovementModalProps {
   student: Student | null;
   currentLocation?: string;
+  initialEtcOpen?: boolean;
   onSelect: (locationOrFreeText: string) => void;
   onReturn: () => void;
   onClose: () => void;
@@ -13,6 +14,7 @@ interface MovementModalProps {
 export const MovementModal = memo(function MovementModal({
   student,
   currentLocation,
+  initialEtcOpen = false,
   onSelect,
   onReturn,
   onClose
@@ -22,11 +24,14 @@ export const MovementModal = memo(function MovementModal({
   const [etcText, setEtcText] = useState('');
 
   useEffect(() => {
-    if (!student) {
+    if (student) {
+      setShowEtcForm(initialEtcOpen);
+      setEtcText('');
+    } else {
       setShowEtcForm(false);
       setEtcText('');
     }
-  }, [student]);
+  }, [student, initialEtcOpen]);
 
   const handleReasonClick = (reasonLabel: string, isEtc: boolean) => {
     if (isEtc) {

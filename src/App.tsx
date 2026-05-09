@@ -27,6 +27,7 @@ export default function App() {
 
   const [dragHakbun, setDragHakbun] = useState<string | null>(null);
   const [hoverKey, setHoverKey] = useState<string | null>(null);
+  const [modalEtcOpen, setModalEtcOpen] = useState(false);
 
   const movementMapRef = useRef(movementMap);
   useEffect(() => {
@@ -54,10 +55,17 @@ export default function App() {
 
   const closeModal = useCallback(() => {
     setSelectedStudent(null);
+    setModalEtcOpen(false);
   }, []);
 
   const openStudentModal = useCallback((student: Student) => {
     setSelectedStudent(student);
+    setModalEtcOpen(false);
+  }, []);
+
+  const openStudentModalForEtc = useCallback((student: Student) => {
+    setSelectedStudent(student);
+    setModalEtcOpen(true);
   }, []);
 
   const applyMovement = useCallback(
@@ -133,6 +141,12 @@ export default function App() {
       const reason = reasons.find((r) => r.key === reasonKey);
       if (!reason) return;
 
+      // 기타로 드롭한 경우: 모달을 띄워 자유 사유를 입력받는다.
+      if (reason.isEtc) {
+        openStudentModalForEtc(student);
+        return;
+      }
+
       const current = movementMapRef.current[hakbun];
       if (current && reasonForLocation(current.location).key === reason.key) return;
 
@@ -143,7 +157,7 @@ export default function App() {
         })
       );
     },
-    [setMovementMap]
+    [openStudentModalForEtc, setMovementMap]
   );
 
   const onDragStartItem = useCallback(
@@ -340,6 +354,7 @@ export default function App() {
       <MovementModal
         student={selectedStudent}
         currentLocation={selectedMovement?.location}
+        initialEtcOpen={modalEtcOpen}
         onSelect={handleLocationSelect}
         onReturn={handleModalReturn}
         onClose={closeModal}
