@@ -128,7 +128,7 @@ export const Gallery = memo(function Gallery({ images, intervalMs }: GalleryProp
         preloadLinkRef.current = null;
       }
     };
-  }, [index, validImages]);
+  }, [index, validImages.length]);
 
   const resetTimer = useCallback(() => {
     if (timerRef.current) {

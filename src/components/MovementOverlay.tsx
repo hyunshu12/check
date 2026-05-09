@@ -45,6 +45,9 @@ export const MovementModal = memo(function MovementModal({
       setTab('movement');
       setShowEtcForm(initialEtcOpen);
       setEtcText('');
+      const today = new Date().getDay();
+      const defaultWeekday = getScheduleForWeekday(today).length > 0 ? today : 1;
+      setRoutineWeekday(defaultWeekday);
     } else {
       setShowEtcForm(false);
       setEtcText('');
@@ -98,7 +101,10 @@ export const MovementModal = memo(function MovementModal({
   const slotLabelFor = (weekday: number, slotId: string) => {
     const schedule = getScheduleForWeekday(weekday);
     const slot = schedule.find((s) => slotIdOf(s) === slotId);
-    if (!slot) return slotId;
+    if (!slot) {
+      const [name] = slotId.split('|');
+      return `${name || slotId} (변경됨)`;
+    }
     return `${slot.name} ${String(slot.start.hour).padStart(2, '0')}:${String(slot.start.minute).padStart(2, '0')}`;
   };
 

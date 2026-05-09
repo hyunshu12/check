@@ -11,10 +11,12 @@ export function slotIdOf(slot: ScheduleSlot) {
   return `${slot.name}|${slot.start.hour}:${slot.start.minute}`;
 }
 
+const EMPTY_SCHEDULE: ScheduleSlot[] = [];
+
 export function getScheduleForWeekday(weekday: number): ScheduleSlot[] {
   if (weekday === 0) return sundaySchedule;
   if (weekday >= 1 && weekday <= 5) return weekdaySchedule;
-  return [];
+  return EMPTY_SCHEDULE;
 }
 
 export function getCurrentScheduleSlot(schedule: ScheduleSlot[], now: Date) {

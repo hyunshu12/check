@@ -16,13 +16,31 @@ import { getCurrentScheduleSlot, getScheduleForWeekday, slotIdOf } from './utils
 const MOVEMENT_STORAGE_KEY = 'movementMap';
 const ROUTINE_STORAGE_KEY = 'routineMap';
 const ROUTINE_LAST_APPLIED_KEY = 'routineLastApplied';
+const ROUTINE_SUPPRESS_DATE_KEY = 'routineSuppressDate';
 const RETURN_DROP_KEY = '__present';
+const ROUTINE_FALLBACK_INTERVAL_MS = 30 * 60 * 1000;
 
 const generateRuleId = () => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
   }
   return `r_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+};
+
+const dateKeyOf = (date: Date) =>
+  `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+
+const isRoutineRule = (value: unknown): value is RoutineRule => {
+  if (!value || typeof value !== 'object') return false;
+  const r = value as Record<string, unknown>;
+  return (
+    typeof r.id === 'string' &&
+    typeof r.weekday === 'number' &&
+    r.weekday >= 0 &&
+    r.weekday <= 6 &&
+    typeof r.slotId === 'string' &&
+    typeof r.location === 'string'
+  );
 };
 
 export default function App() {
@@ -165,10 +183,39 @@ export default function App() {
     routineMapRef.current = routineMap;
   }, [routineMap]);
 
+  useEffect(() => {
+    const validHakbun = new Set(students.map((s) => s.hakbun));
+    setRoutineMap((prev) => {
+      if (!prev || typeof prev !== 'object' || Array.isArray(prev)) return {};
+      let dirty = false;
+      const next: RoutineMap = {};
+      Object.entries(prev).forEach(([hakbun, rules]) => {
+        if (!validHakbun.has(hakbun) || !Array.isArray(rules)) {
+          dirty = true;
+          return;
+        }
+        const cleaned = rules.filter(isRoutineRule);
+        if (cleaned.length !== rules.length) dirty = true;
+        if (cleaned.length === 0) {
+          dirty = true;
+          return;
+        }
+        next[hakbun] = cleaned;
+      });
+      return dirty ? next : prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleResetMovement = useCallback(() => {
     if (!movedCount) return;
-    if (!window.confirm('모든 이동 기록을 초기화할까요?')) return;
+    if (!window.confirm('모든 이동 기록을 초기화하고 오늘은 루틴 자동 적용을 멈출까요?')) return;
     setMovementMap({});
+    try {
+      window.localStorage.setItem(ROUTINE_SUPPRESS_DATE_KEY, dateKeyOf(new Date()));
+    } catch {
+      /* ignore */
+    }
     closeModal();
   }, [closeModal, movedCount, setMovementMap]);
 
@@ -306,8 +353,7 @@ export default function App() {
       'pointerdown',
       'touchstart',
       'keydown',
-      'wheel',
-      'scroll'
+      'wheel'
     ];
     events.forEach((event) => window.addEventListener(event, reset, { passive: true }));
     reset();
@@ -319,68 +365,110 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const readPersistedKey = () => {
+    const readKey = (k: string) => {
       try {
-        return window.localStorage.getItem(ROUTINE_LAST_APPLIED_KEY);
+        return window.localStorage.getItem(k);
       } catch {
         return null;
       }
     };
-    const writePersistedKey = (key: string) => {
+    const writeKey = (k: string, v: string) => {
       try {
-        window.localStorage.setItem(ROUTINE_LAST_APPLIED_KEY, key);
+        window.localStorage.setItem(k, v);
       } catch {
         /* ignore */
       }
     };
 
-    let lastAppliedKey = readPersistedKey();
+    let lastAppliedKey = readKey(ROUTINE_LAST_APPLIED_KEY);
+    let timeoutId: number | null = null;
+    let cancelled = false;
 
     const tick = () => {
+      if (cancelled) return;
       const now = new Date();
+      const ts = now.getTime();
       const weekday = now.getDay();
       const schedule = getScheduleForWeekday(weekday);
       const slot = getCurrentScheduleSlot(schedule, now);
-      if (!slot) return;
+      const todayKey = dateKeyOf(now);
+      const suppressDate = readKey(ROUTINE_SUPPRESS_DATE_KEY);
+      if (suppressDate && suppressDate !== todayKey) {
+        try {
+          window.localStorage.removeItem(ROUTINE_SUPPRESS_DATE_KEY);
+        } catch {
+          /* ignore */
+        }
+      }
 
-      const dateKey = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
-      const slotKey = `${dateKey}|${weekday}|${slotIdOf(slot)}`;
-      if (lastAppliedKey === slotKey) return;
-      lastAppliedKey = slotKey;
-      writePersistedKey(slotKey);
+      if (slot && suppressDate !== todayKey) {
+        const slotKey = `${todayKey}|${weekday}|${slotIdOf(slot)}`;
+        if (lastAppliedKey !== slotKey) {
+          lastAppliedKey = slotKey;
+          writeKey(ROUTINE_LAST_APPLIED_KEY, slotKey);
 
-      const targetSlotId = slotIdOf(slot);
-      const routines = routineMapRef.current;
+          const targetSlotId = slotIdOf(slot);
+          const routines = routineMapRef.current;
 
-      setMovementMap((prev) => {
-        let next = prev;
-        let changed = false;
-        students.forEach((student) => {
-          const rules = routines[student.hakbun];
-          if (!rules || rules.length === 0) return;
-          const match = rules.find((r) => r.weekday === weekday && r.slotId === targetSlotId);
-          if (!match) return;
-          const current = next[student.hakbun];
-          if (current?.location === match.location) return;
-          next = upsertMovement(next, student.hakbun, {
-            location: match.location,
-            timestamp: Date.now()
+          setMovementMap((prev) => {
+            let next = prev;
+            let changed = false;
+            students.forEach((student) => {
+              const rules = routines[student.hakbun];
+              if (!rules || rules.length === 0) return;
+              const match = rules.find((r) => r.weekday === weekday && r.slotId === targetSlotId);
+              if (!match) return;
+              const current = next[student.hakbun];
+              if (current?.location === match.location) return;
+              next = upsertMovement(next, student.hakbun, {
+                location: match.location,
+                timestamp: ts
+              });
+              changed = true;
+            });
+            return changed ? next : prev;
           });
-          changed = true;
+        }
+      }
+
+      // Schedule next wakeup at the next slot boundary (start or end), or fallback.
+      const minutesNow = now.getHours() * 60 + now.getMinutes();
+      let nextBoundaryMin: number | null = null;
+      schedule.forEach((s) => {
+        const start = s.start.hour * 60 + s.start.minute;
+        const end = s.end.hour * 60 + s.end.minute;
+        [start, end].forEach((m) => {
+          if (m > minutesNow && (nextBoundaryMin === null || m < nextBoundaryMin)) {
+            nextBoundaryMin = m;
+          }
         });
-        return changed ? next : prev;
       });
+
+      let delayMs: number;
+      if (nextBoundaryMin !== null) {
+        const target = new Date(now);
+        target.setHours(Math.floor(nextBoundaryMin / 60), nextBoundaryMin % 60, 0, 200);
+        delayMs = Math.max(target.getTime() - ts, 1000);
+      } else {
+        delayMs = ROUTINE_FALLBACK_INTERVAL_MS;
+      }
+
+      timeoutId = window.setTimeout(tick, delayMs);
     };
 
     tick();
-    const id = window.setInterval(tick, 30_000);
-    return () => window.clearInterval(id);
+    return () => {
+      cancelled = true;
+      if (timeoutId !== null) window.clearTimeout(timeoutId);
+    };
   }, [setMovementMap]);
 
   useEffect(() => {
     if (!import.meta.env.DEV) return;
     if (typeof performance === 'undefined') return;
+    let cancelled = false;
     const sample = () => {
+      if (cancelled) return;
       const memInfo = (performance as unknown as { memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number } }).memory;
       if (memInfo) {
         const used = (memInfo.usedJSHeapSize / 1048576).toFixed(1);
@@ -391,14 +479,18 @@ export default function App() {
       const measureFn = (performance as unknown as { measureUserAgentSpecificMemory?: () => Promise<{ bytes: number }> }).measureUserAgentSpecificMemory;
       if (typeof measureFn === 'function') {
         measureFn.call(performance).then((r) => {
+          if (cancelled) return;
           const mb = (r.bytes / 1048576).toFixed(1);
           console.info(`[heap-probe] uaSpecificMemory=${mb}MB`);
         }).catch(() => undefined);
       }
     };
     sample();
-    const id = window.setInterval(sample, 30 * 60 * 1000);
-    return () => window.clearInterval(id);
+    const id = window.setInterval(sample, 6 * 60 * 60 * 1000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
   }, []);
 
   return (
