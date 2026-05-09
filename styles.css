@@ -757,14 +757,13 @@ img {
 
 .movement-modal__quick-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
 }
 
-.movement-modal__quick,
-.movement-modal__extra {
-  min-height: 52px;
-  padding: 12px 14px;
+.movement-modal__quick {
+  min-height: 64px;
+  padding: 16px 14px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.05);
@@ -774,7 +773,7 @@ img {
   white-space: normal;
   word-break: keep-all;
   overflow-wrap: normal;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .movement-modal__quick.is-active {
@@ -783,15 +782,56 @@ img {
   font-weight: 600;
 }
 
-.movement-modal__extras {
-  padding-top: 4px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+.movement-modal__etc-form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
 }
 
-.movement-modal__extras-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-  gap: 10px;
+.movement-modal__etc-input {
+  padding: 12px 14px;
+  background: transparent;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.95rem;
+  min-width: 0;
+}
+
+.movement-modal__etc-input:focus {
+  outline: none;
+  border-color: var(--border-strong);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.movement-modal__etc-input::placeholder {
+  color: var(--text-muted);
+}
+
+.movement-modal__etc-save {
+  padding: 0 22px;
+  background: #f5f5f5;
+  color: var(--text-dark);
+  font-weight: 700;
+  border-radius: 8px;
+  font-size: 0.92rem;
+  min-height: 48px;
+  cursor: pointer;
+  transition: background-color 60ms ease, opacity 60ms ease;
+}
+
+.movement-modal__etc-save:hover:not(:disabled) {
+  background: #ffffff;
+}
+
+.movement-modal__etc-save:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 @media (max-width: 1280px) {
@@ -912,6 +952,14 @@ img {
   .movement-modal__return {
     width: 100%;
     justify-content: center;
+  }
+
+  .movement-modal__quick-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .movement-modal__etc-form {
+    grid-template-columns: 1fr;
   }
 }
 

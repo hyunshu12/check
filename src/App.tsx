@@ -6,7 +6,6 @@ import { MovementModal } from './components/MovementOverlay';
 import { ReasonBoard } from './components/ReasonBoard';
 import { SeatMinimap } from './components/SeatMinimap';
 import { galleryImages, galleryIntervalMs, TOTAL_STUDENTS } from './config/appSettings';
-import { classroomSettings } from './config/classrooms';
 import { reasons, reasonForLocation } from './config/reasons';
 import { students } from './config/students';
 import { usePersistentState } from './hooks/usePersistentState';
@@ -23,7 +22,6 @@ export default function App() {
   useEffect(() => {
     selectedStudentRef.current = selectedStudent;
   }, [selectedStudent]);
-  const [showExtraLocations, setShowExtraLocations] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isFullscreenSupported, setIsFullscreenSupported] = useState(true);
 
@@ -34,19 +32,6 @@ export default function App() {
   useEffect(() => {
     movementMapRef.current = movementMap;
   }, [movementMap]);
-
-  const mainLocations = useMemo(
-    () => classroomSettings.main.filter((location) => location.trim().length > 0),
-    []
-  );
-  const extraLocations = useMemo(
-    () => [...classroomSettings.extra].sort((a, b) => a.localeCompare(b, 'ko-KR')),
-    []
-  );
-  const modalLocations = useMemo(
-    () => mainLocations.filter((location) => location !== '복귀'),
-    [mainLocations]
-  );
 
   const totalStudents = TOTAL_STUDENTS && TOTAL_STUDENTS > 0 ? TOTAL_STUDENTS : students.length;
 
@@ -69,12 +54,10 @@ export default function App() {
 
   const closeModal = useCallback(() => {
     setSelectedStudent(null);
-    setShowExtraLocations(false);
   }, []);
 
   const openStudentModal = useCallback((student: Student) => {
     setSelectedStudent(student);
-    setShowExtraLocations(false);
   }, []);
 
   const applyMovement = useCallback(
@@ -97,14 +80,10 @@ export default function App() {
   );
 
   const handleLocationSelect = useCallback(
-    (location: string) => {
+    (locationOrFreeText: string) => {
       const student = selectedStudentRef.current;
       if (!student) return;
-      if (location === '기타') {
-        setShowExtraLocations((prev) => !prev);
-        return;
-      }
-      applyMovement(student, location);
+      applyMovement(student, locationOrFreeText);
     },
     [applyMovement]
   );
@@ -361,9 +340,6 @@ export default function App() {
       <MovementModal
         student={selectedStudent}
         currentLocation={selectedMovement?.location}
-        mainLocations={modalLocations}
-        extraLocations={extraLocations}
-        showExtraLocations={showExtraLocations}
         onSelect={handleLocationSelect}
         onReturn={handleModalReturn}
         onClose={closeModal}

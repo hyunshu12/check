@@ -1,13 +1,11 @@
-import { memo } from 'react';
+import { memo, useEffect, useState } from 'react';
+import { reasons } from '../config/reasons';
 import { Student } from '../types';
 
 interface MovementModalProps {
   student: Student | null;
   currentLocation?: string;
-  mainLocations: string[];
-  extraLocations: string[];
-  showExtraLocations: boolean;
-  onSelect: (location: string) => void;
+  onSelect: (locationOrFreeText: string) => void;
   onReturn: () => void;
   onClose: () => void;
 }
@@ -15,14 +13,35 @@ interface MovementModalProps {
 export const MovementModal = memo(function MovementModal({
   student,
   currentLocation,
-  mainLocations,
-  extraLocations,
-  showExtraLocations,
   onSelect,
   onReturn,
   onClose
 }: MovementModalProps) {
   const isOpen = Boolean(student);
+  const [showEtcForm, setShowEtcForm] = useState(false);
+  const [etcText, setEtcText] = useState('');
+
+  useEffect(() => {
+    if (!student) {
+      setShowEtcForm(false);
+      setEtcText('');
+    }
+  }, [student]);
+
+  const handleReasonClick = (reasonLabel: string, isEtc: boolean) => {
+    if (isEtc) {
+      setShowEtcForm((prev) => !prev);
+      return;
+    }
+    onSelect(reasonLabel);
+  };
+
+  const handleEtcSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const trimmed = etcText.trim();
+    if (!trimmed) return;
+    onSelect(trimmed);
+  };
 
   return (
     <div className={`movement-modal${isOpen ? ' is-open' : ''}`} aria-hidden={!isOpen}>
@@ -63,35 +82,39 @@ export const MovementModal = memo(function MovementModal({
             ) : null}
 
             <div className="movement-modal__quick-grid">
-              {mainLocations.map((location) => (
+              {reasons.map((reason) => (
                 <button
-                  key={location}
+                  key={reason.key}
                   type="button"
                   className={`movement-modal__quick${
-                    location === '기타' && showExtraLocations ? ' is-active' : ''
+                    reason.isEtc && showEtcForm ? ' is-active' : ''
                   }`}
-                  onClick={() => onSelect(location)}
+                  onClick={() => handleReasonClick(reason.label, Boolean(reason.isEtc))}
                 >
-                  {location}
+                  {reason.label}
                 </button>
               ))}
             </div>
 
-            {showExtraLocations ? (
-              <div className="movement-modal__extras">
-                <div className="movement-modal__extras-grid">
-                  {extraLocations.map((location) => (
-                    <button
-                      key={location}
-                      type="button"
-                      className="movement-modal__extra"
-                      onClick={() => onSelect(location)}
-                    >
-                      {location}
-                    </button>
-                  ))}
-                </div>
-              </div>
+            {showEtcForm ? (
+              <form className="movement-modal__etc-form" onSubmit={handleEtcSubmit}>
+                <input
+                  className="movement-modal__etc-input"
+                  type="text"
+                  value={etcText}
+                  onChange={(e) => setEtcText(e.target.value)}
+                  placeholder="사유를 입력해 주세요"
+                  autoFocus
+                  maxLength={30}
+                />
+                <button
+                  type="submit"
+                  className="movement-modal__etc-save"
+                  disabled={!etcText.trim()}
+                >
+                  저장
+                </button>
+              </form>
             ) : null}
           </div>
         </section>
