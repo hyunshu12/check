@@ -1,9 +1,20 @@
 import { ScheduleSlot } from '../types';
+import { sundaySchedule, weekdaySchedule } from '../config/schedule';
 
 const MINUTES_IN_HOUR = 60;
 
 export function toMinutes({ hour, minute }: { hour: number; minute: number }) {
   return hour * MINUTES_IN_HOUR + minute;
+}
+
+export function slotIdOf(slot: ScheduleSlot) {
+  return `${slot.name}|${slot.start.hour}:${slot.start.minute}`;
+}
+
+export function getScheduleForWeekday(weekday: number): ScheduleSlot[] {
+  if (weekday === 0) return sundaySchedule;
+  if (weekday >= 1 && weekday <= 5) return weekdaySchedule;
+  return [];
 }
 
 export function getCurrentScheduleSlot(schedule: ScheduleSlot[], now: Date) {
