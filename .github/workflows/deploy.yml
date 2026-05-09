@@ -49,7 +49,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=beta-classroom-monitor --branch=main --commit-dirty=true
+          command: pages deploy dist --project-name=beta-classroom-monitor --branch=main --commit-dirty=true --commit-hash=${{ github.sha }} --commit-message="deploy ${{ github.sha }}"
 
 
 
