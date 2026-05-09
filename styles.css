@@ -1458,10 +1458,10 @@ img {
   background: var(--bg-panel-strong);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-card);
-  padding: 18px 20px;
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   min-height: 0;
   transition: border-color 60ms ease, background-color 60ms ease;
 }
@@ -1477,7 +1477,7 @@ img {
   gap: 8px;
 }
 .va-mini__title {
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   font-weight: 700;
   letter-spacing: -0.02em;
 }
@@ -1518,7 +1518,7 @@ img {
 .va-mini__grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 6px;
+  gap: 5px;
   overflow: auto;
   scrollbar-gutter: stable;
 }
@@ -1526,12 +1526,12 @@ img {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid transparent;
   border-radius: 6px;
-  padding: 8px 6px;
+  padding: 6px 4px;
   text-align: center;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  font-size: 0.82rem;
+  gap: 1px;
+  font-size: 0.78rem;
   cursor: grab;
   user-select: none;
 }
@@ -1551,7 +1551,7 @@ img {
 }
 .va-seat__hakbun {
   color: var(--text-faint, rgba(255, 255, 255, 0.32));
-  font-size: 0.72rem;
+  font-size: 0.66rem;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
 }
@@ -1570,13 +1570,6 @@ img {
   color: var(--text-muted);
   border-style: dashed;
 }
-.va-mini__hint {
-  color: var(--text-faint, rgba(255, 255, 255, 0.32));
-  font-size: 0.78rem;
-  text-align: center;
-  padding-top: 4px;
-}
-
 /* 미니맵 + 갤러리가 viewport에 맞게 줄어들도록 */
 .va-side .gallery-panel {
   min-height: 0;

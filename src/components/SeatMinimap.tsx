@@ -92,7 +92,6 @@ export const SeatMinimap = memo(function SeatMinimap({
           );
         })}
       </div>
-      <p className="va-mini__hint">사유 카드의 학생을 미니맵 영역으로 끌어 놓으면 복귀됩니다.</p>
     </section>
   );
 });
