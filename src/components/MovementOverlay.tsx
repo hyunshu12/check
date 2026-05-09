@@ -1,6 +1,5 @@
 import { memo, useEffect, useMemo, useState } from 'react';
 import { reasons } from '../config/reasons';
-import { classroomSettings } from '../config/classrooms';
 import { RoutineRule, Student } from '../types';
 import { getScheduleForWeekday, slotIdOf } from '../utils/schedule';
 
@@ -59,16 +58,10 @@ export const MovementModal = memo(function MovementModal({
     }));
   }, [routineWeekday]);
 
-  const locationOptions = useMemo(() => {
-    const reasonLabels = reasons.filter((r) => !r.isEtc).map((r) => r.label);
-    const merged = [...reasonLabels, ...classroomSettings.main, ...classroomSettings.extra];
-    const seen = new Set<string>();
-    return merged.filter((loc) => {
-      if (loc === '복귀' || loc === '기타' || seen.has(loc)) return false;
-      seen.add(loc);
-      return true;
-    });
-  }, []);
+  const locationOptions = useMemo(
+    () => reasons.filter((r) => !r.isEtc).map((r) => r.label),
+    []
+  );
 
   useEffect(() => {
     if (!slotOptions.length) {
@@ -310,7 +303,7 @@ export const MovementModal = memo(function MovementModal({
                 </form>
 
                 <p className="routine-form__hint">
-                  해당 요일·시간이 시작되면 자동으로 위치가 적용됩니다. 같은 시간에 수동으로 다른 곳으로 옮긴 경우는 그대로 유지됩니다.
+                  해당 요일·시간이 시작되면 자동으로 사유가 적용됩니다. 같은 시간에 수동으로 다른 사유로 바꾼 경우는 그대로 유지됩니다.
                 </p>
               </>
             )}
