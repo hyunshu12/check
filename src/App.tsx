@@ -9,14 +9,25 @@ import { galleryImages, galleryIntervalMs, TOTAL_STUDENTS } from './config/appSe
 import { reasons, reasonForLocation } from './config/reasons';
 import { students } from './config/students';
 import { usePersistentState } from './hooks/usePersistentState';
-import { MovementMap, MovementRecord, Student } from './types';
+import { MovementMap, MovementRecord, RoutineMap, RoutineRule, Student } from './types';
 import { upsertMovement } from './utils/movement';
+import { getCurrentScheduleSlot, getScheduleForWeekday, slotIdOf } from './utils/schedule';
 
 const MOVEMENT_STORAGE_KEY = 'movementMap';
+const ROUTINE_STORAGE_KEY = 'routineMap';
+const ROUTINE_LAST_APPLIED_KEY = 'routineLastApplied';
 const RETURN_DROP_KEY = '__present';
+
+const generateRuleId = () => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `r_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+};
 
 export default function App() {
   const [movementMap, setMovementMap] = usePersistentState<MovementMap>(MOVEMENT_STORAGE_KEY, {});
+  const [routineMap, setRoutineMap] = usePersistentState<RoutineMap>(ROUTINE_STORAGE_KEY, {});
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const selectedStudentRef = useRef<Student | null>(null);
   useEffect(() => {
@@ -111,6 +122,48 @@ export default function App() {
     if (!student) return;
     handleReturnStudent(student);
   }, [handleReturnStudent]);
+
+  const handleAddRoutine = useCallback(
+    (hakbun: string, weekday: number, slotId: string, location: string) => {
+      setRoutineMap((prev) => {
+        const existing = prev[hakbun] ?? [];
+        const duplicate = existing.find(
+          (r) => r.weekday === weekday && r.slotId === slotId
+        );
+        const filtered = duplicate ? existing.filter((r) => r.id !== duplicate.id) : existing;
+        const next: RoutineRule = { id: generateRuleId(), weekday, slotId, location };
+        return { ...prev, [hakbun]: [...filtered, next] };
+      });
+    },
+    [setRoutineMap]
+  );
+
+  const handleDeleteRoutine = useCallback(
+    (hakbun: string, ruleId: string) => {
+      setRoutineMap((prev) => {
+        const existing = prev[hakbun] ?? [];
+        const filtered = existing.filter((r) => r.id !== ruleId);
+        const clone = { ...prev };
+        if (filtered.length === 0) {
+          delete clone[hakbun];
+        } else {
+          clone[hakbun] = filtered;
+        }
+        return clone;
+      });
+    },
+    [setRoutineMap]
+  );
+
+  const selectedRoutineRules = useMemo(
+    () => (selectedStudent ? routineMap[selectedStudent.hakbun] ?? [] : []),
+    [routineMap, selectedStudent]
+  );
+
+  const routineMapRef = useRef(routineMap);
+  useEffect(() => {
+    routineMapRef.current = routineMap;
+  }, [routineMap]);
 
   const handleResetMovement = useCallback(() => {
     if (!movedCount) return;
@@ -266,6 +319,65 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    const readPersistedKey = () => {
+      try {
+        return window.localStorage.getItem(ROUTINE_LAST_APPLIED_KEY);
+      } catch {
+        return null;
+      }
+    };
+    const writePersistedKey = (key: string) => {
+      try {
+        window.localStorage.setItem(ROUTINE_LAST_APPLIED_KEY, key);
+      } catch {
+        /* ignore */
+      }
+    };
+
+    let lastAppliedKey = readPersistedKey();
+
+    const tick = () => {
+      const now = new Date();
+      const weekday = now.getDay();
+      const schedule = getScheduleForWeekday(weekday);
+      const slot = getCurrentScheduleSlot(schedule, now);
+      if (!slot) return;
+
+      const dateKey = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+      const slotKey = `${dateKey}|${weekday}|${slotIdOf(slot)}`;
+      if (lastAppliedKey === slotKey) return;
+      lastAppliedKey = slotKey;
+      writePersistedKey(slotKey);
+
+      const targetSlotId = slotIdOf(slot);
+      const routines = routineMapRef.current;
+
+      setMovementMap((prev) => {
+        let next = prev;
+        let changed = false;
+        students.forEach((student) => {
+          const rules = routines[student.hakbun];
+          if (!rules || rules.length === 0) return;
+          const match = rules.find((r) => r.weekday === weekday && r.slotId === targetSlotId);
+          if (!match) return;
+          const current = next[student.hakbun];
+          if (current?.location === match.location) return;
+          next = upsertMovement(next, student.hakbun, {
+            location: match.location,
+            timestamp: Date.now()
+          });
+          changed = true;
+        });
+        return changed ? next : prev;
+      });
+    };
+
+    tick();
+    const id = window.setInterval(tick, 30_000);
+    return () => window.clearInterval(id);
+  }, [setMovementMap]);
+
+  useEffect(() => {
     if (!import.meta.env.DEV) return;
     if (typeof performance === 'undefined') return;
     const sample = () => {
@@ -355,9 +467,12 @@ export default function App() {
         student={selectedStudent}
         currentLocation={selectedMovement?.location}
         initialEtcOpen={modalEtcOpen}
+        routineRules={selectedRoutineRules}
         onSelect={handleLocationSelect}
         onReturn={handleModalReturn}
         onClose={closeModal}
+        onAddRoutine={handleAddRoutine}
+        onDeleteRoutine={handleDeleteRoutine}
       />
     </div>
   );

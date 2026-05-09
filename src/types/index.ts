@@ -16,6 +16,15 @@ export interface ScheduleSlot {
   end: { hour: number; minute: number };
 }
 
+export interface RoutineRule {
+  id: string;
+  weekday: number; // 0=Sun .. 6=Sat
+  slotId: string;  // slotIdOf(slot)
+  location: string;
+}
+
+export type RoutineMap = Record<string, RoutineRule[]>;
+
 export interface ClassroomSettings {
   main: string[];
   extra: string[];
