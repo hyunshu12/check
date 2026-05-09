@@ -17,6 +17,7 @@ export function usePersistentState<T>(key: string, defaultValue: T) {
 
   const prevKeyRef = useRef(key);
   const writeHandleRef = useRef<number | null>(null);
+  const lastSerializedRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!isBrowser) return;
@@ -24,11 +25,22 @@ export function usePersistentState<T>(key: string, defaultValue: T) {
     if (prevKeyRef.current !== key) {
       window.localStorage.removeItem(prevKeyRef.current);
       prevKeyRef.current = key;
+      lastSerializedRef.current = null;
     }
+
+    let serialized: string;
+    try {
+      serialized = JSON.stringify(value);
+    } catch (error) {
+      console.warn(`[usePersistentState] failed to serialize ${key}`, error);
+      return;
+    }
+
+    if (serialized === lastSerializedRef.current) return;
 
     const scheduleIdle = (cb: () => void): number => {
       if (typeof window.requestIdleCallback === 'function') {
-        return window.requestIdleCallback(cb, { timeout: 1000 }) as unknown as number;
+        return window.requestIdleCallback(cb, { timeout: 2000 }) as unknown as number;
       }
       return window.setTimeout(cb, 0);
     };
@@ -47,7 +59,8 @@ export function usePersistentState<T>(key: string, defaultValue: T) {
     writeHandleRef.current = scheduleIdle(() => {
       writeHandleRef.current = null;
       try {
-        window.localStorage.setItem(key, JSON.stringify(value));
+        window.localStorage.setItem(key, serialized);
+        lastSerializedRef.current = serialized;
       } catch (error) {
         console.warn(`[usePersistentState] failed to store ${key}`, error);
       }
