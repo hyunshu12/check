@@ -15,6 +15,7 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: false,
     minify: 'esbuild',
+    target: 'es2020',
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
@@ -23,6 +24,10 @@ export default defineConfig({
         },
       },
     },
+  },
+  esbuild: {
+    pure: ['console.log', 'console.info', 'console.debug'],
+    drop: ['debugger'],
   },
   optimizeDeps: {
     include: ['react', 'react-dom'],
