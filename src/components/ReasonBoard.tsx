@@ -57,11 +57,7 @@ export const ReasonBoard = memo(function ReasonBoard({
       );
     });
 
-    return Array.from(map.values()).sort((a, b) => {
-      if (a.items.length === 0 && b.items.length > 0) return 1;
-      if (b.items.length === 0 && a.items.length > 0) return -1;
-      return b.items.length - a.items.length;
-    });
+    return reasons.map((reason) => map.get(reason.key)!);
   }, [movementMap, students]);
 
   const isDragging = Boolean(dragHakbun);
