@@ -68,7 +68,6 @@ export const ReasonBoard = memo(function ReasonBoard({
         <h2 className="va-board__title" id="reason-board-title">
           사유별 이동 현황
         </h2>
-        <span className="va-board__hint">미니맵의 학생을 사유 카드로 끌어 놓으세요</span>
       </div>
       <div className="va-board__grid">
         {groups.map((group) => (
