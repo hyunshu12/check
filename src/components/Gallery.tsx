@@ -47,7 +47,7 @@ export const Gallery = memo(function Gallery({ images, intervalMs }: GalleryProp
   const validImages = useMemo(() => images.filter((image) => image.main?.jpegSrc), [images]);
   const [index, setIndex] = useState(0);
   const timerRef = useRef<number>();
-  const preloadLinkRef = useRef<HTMLLinkElement | null>(null);
+  const preloaderRef = useRef<HTMLImageElement | null>(null);
 
   const hasMultiple = validImages.length > 1;
   const previewIndices = useMemo(() => {
@@ -99,36 +99,26 @@ export const Gallery = memo(function Gallery({ images, intervalMs }: GalleryProp
   useEffect(() => {
     if (validImages.length < 2) return;
     const nextImage = validImages[(index + 1) % validImages.length];
-    const nextWebp = nextImage.main.webpSrc ?? nextImage.main.jpegSrc;
+    const nextSrc = nextImage.main.webpSrc ?? nextImage.main.jpegSrc;
 
-    // Remove the previous preload (Chromium ignores href mutations on existing preload links).
-    if (preloadLinkRef.current) {
-      preloadLinkRef.current.remove();
-      preloadLinkRef.current = null;
+    // 단일 Image 객체에 src 만 갈아끼우면 노드/리스트가 누적되지 않아
+    // 4GB 키오스크에서 24h 운용 시 GPU·디코더 메모리 누수가 사라진다.
+    if (!preloaderRef.current) {
+      preloaderRef.current = new Image();
+      preloaderRef.current.decoding = 'async';
     }
+    preloaderRef.current.src = nextSrc;
+  }, [index, validImages.length]);
 
-    const link = document.createElement('link');
-    link.rel = 'preload';
-    link.as = 'image';
-    link.href = nextWebp;
-    if (nextImage.main.webpSrcSmall && nextImage.main.widthSmall) {
-      link.setAttribute(
-        'imagesrcset',
-        `${nextImage.main.webpSrcSmall} ${nextImage.main.widthSmall}w, ${nextImage.main.webpSrc} ${nextImage.main.width}w`
-      );
-      link.setAttribute('imagesizes', '(max-width: 1024px) 960px, 1600px');
-    }
-    link.setAttribute('fetchpriority', 'low');
-    document.head.appendChild(link);
-    preloadLinkRef.current = link;
-
+  useEffect(() => {
     return () => {
-      if (preloadLinkRef.current === link) {
-        link.remove();
-        preloadLinkRef.current = null;
+      // unmount 시 디코더 자원 해제
+      if (preloaderRef.current) {
+        preloaderRef.current.src = '';
+        preloaderRef.current = null;
       }
     };
-  }, [index, validImages.length]);
+  }, []);
 
   const resetTimer = useCallback(() => {
     if (timerRef.current) {

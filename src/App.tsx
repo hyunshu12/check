@@ -251,14 +251,16 @@ export default function App() {
       const reason = reasons.find((r) => r.key === reasonKey);
       if (!reason) return;
 
+      // 이미 같은 사유 그룹에 속해 있으면 아무 것도 하지 않음
+      // (특히 기타 그룹 안에서 다른 학생 위로 드롭해도 자유입력 모달이 뜨지 않도록).
+      const current = movementMapRef.current[hakbun];
+      if (current && reasonForLocation(current.location).key === reason.key) return;
+
       // 기타로 드롭한 경우: 모달을 띄워 자유 사유를 입력받는다.
       if (reason.isEtc) {
         openStudentModalForEtc(student);
         return;
       }
-
-      const current = movementMapRef.current[hakbun];
-      if (current && reasonForLocation(current.location).key === reason.key) return;
 
       setMovementMap((prev) =>
         upsertMovement(prev, student.hakbun, {
@@ -337,6 +339,16 @@ export default function App() {
     return () => document.removeEventListener('fullscreenchange', syncFullscreenState);
   }, []);
 
+  // 페이지 가시성이 hidden 으로 전환될 때 드래그 진행 상태를 정리.
+  // dnd-kit 이 자동으로 onDragCancel 을 발동하지 않을 수 있어 잔여 하이라이트가 남는 것 방지.
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.hidden) setDragHakbun(null);
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, []);
+
   useEffect(() => {
     const IDLE_MS = 60_000;
     let timerId: number | null = null;
@@ -353,9 +365,12 @@ export default function App() {
       timerId = window.setTimeout(scrollToTop, IDLE_MS);
     };
 
+    // pointermove/touchmove 도 포함해야 드래그 중 60초 idle 자동 스크롤 방지
     const events: Array<keyof WindowEventMap> = [
       'pointerdown',
+      'pointermove',
       'touchstart',
+      'touchmove',
       'keydown',
       'wheel'
     ];
@@ -423,7 +438,11 @@ export default function App() {
               const match = rules.find((r) => r.weekday === weekday && r.slotId === targetSlotId);
               if (!match) return;
               const current = next[student.hakbun];
-              if (current?.location === match.location) return;
+              // 비어 있을 때만 루틴을 자동 적용. 사용자가 수동으로 다른 사유(또는
+              // 같은 사유)로 바꿔둔 경우 그대로 보존해 덮어쓰지 않는다.
+              // (좌석 복귀는 upsertMovement 가 entry 자체를 delete 하므로
+              //  current 가 undefined → 정상 적용된다.)
+              if (current?.location) return;
               next = upsertMovement(next, student.hakbun, {
                 location: match.location,
                 timestamp: ts
