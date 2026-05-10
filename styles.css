@@ -1677,7 +1677,14 @@ img {
     grid-template-columns: minmax(0, 1.55fr) minmax(300px, 0.85fr);
     min-height: 0;
   }
-  /* 사유 보드 자체 레이아웃은 데스크톱 기본형 유지 (2-col grid, 카드 패딩/폰트) */
+  /* 사유 보드 자체 레이아웃은 데스크톱 기본형 유지 (2-col grid).
+     auto-fit 등으로 한 행에 4개 이상 깨지지 않도록 명시적으로 2-col 못박음. */
+  .va-board__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .vr-names {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .va-mini {
     padding: 10px 12px;
     gap: 6px;
@@ -1698,6 +1705,13 @@ img {
   .va-side .gallery-panel {
     min-height: 0;
     overflow: hidden;
+  }
+}
+
+/* 매우 넓은 화면(≥1700px)에서는 사유 카드 3-col 허용 */
+@media (orientation: landscape) and (min-width: 1700px) {
+  .va-board__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
