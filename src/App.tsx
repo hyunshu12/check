@@ -275,16 +275,25 @@ export default function App() {
     useSensor(TouchSensor, { activationConstraint: { distance: 8 } })
   );
 
+  const extractHakbun = (activeId: string) => {
+    const idx = activeId.indexOf(':');
+    return idx >= 0 ? activeId.slice(idx + 1) : activeId;
+  };
+
   const handleDragStart = useCallback((event: DragStartEvent) => {
-    setDragHakbun(String(event.active.id));
+    setDragHakbun(extractHakbun(String(event.active.id)));
   }, []);
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
       setDragHakbun(null);
+      const hakbun = extractHakbun(String(event.active.id));
       const overId = event.over?.id;
-      if (overId == null) return;
-      const hakbun = String(event.active.id);
+      // 어떤 droppable 에도 떨어뜨리지 않은 경우 → 좌석 미니맵으로 복귀
+      if (overId == null) {
+        assignReason(hakbun, RETURN_DROP_KEY);
+        return;
+      }
       const overStr = String(overId);
       if (overStr === 'seat-return') {
         assignReason(hakbun, RETURN_DROP_KEY);
