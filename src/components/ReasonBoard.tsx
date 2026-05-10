@@ -30,20 +30,12 @@ export const ReasonBoard = memo(function ReasonBoard({
     const map = new Map<string, Group>();
     reasons.forEach((reason) => map.set(reason.key, { ...reason, items: [] }));
 
-    const orderIndex = new Map<string, number>();
-    students.forEach((student, index) => orderIndex.set(student.hakbun, index));
-
+    // students 가 학번 순으로 들어오므로 forEach 순서가 곧 정렬 결과.
     students.forEach((student) => {
       const movement = movementMap[student.hakbun];
       if (!movement || !movement.location) return;
       const reason = reasonForLocation(movement.location);
       map.get(reason.key)?.items.push({ student, detail: movement.location });
-    });
-
-    map.forEach((group) => {
-      group.items.sort(
-        (a, b) => (orderIndex.get(a.student.hakbun) ?? 0) - (orderIndex.get(b.student.hakbun) ?? 0)
-      );
     });
 
     return reasons.map((reason) => map.get(reason.key)!);

@@ -1531,9 +1531,12 @@ img {
   cursor: grab;
   user-select: none;
 }
-.va-seat:hover {
-  background: rgba(255, 255, 255, 0.10);
-  border-color: rgba(255, 255, 255, 0.18);
+/* hover 는 마우스 환경에서만 — 터치 디바이스에서 sticky hover 잔상 방지 */
+@media (hover: hover) {
+  .va-seat:hover {
+    background: rgba(255, 255, 255, 0.10);
+    border-color: rgba(255, 255, 255, 0.18);
+  }
 }
 .va-seat:focus-visible {
   outline: 2px solid rgba(255, 255, 255, 0.7);
@@ -1656,9 +1659,11 @@ img {
 
 /* ── 16:9 가로 (태블릿 landscape / 키오스크) 최적화 ───────────────── */
 @media (orientation: landscape) and (max-height: 1100px) {
-  /* viewport 안에 헤더+보드+미니맵 모두 들어가도록 root를 vh에 고정 */
+  /* viewport 안에 헤더+보드+미니맵 모두 들어가도록 root를 vh에 고정.
+     dvh 로 모바일 브라우저 주소창 토글 시 layout thrash 방지. */
   .va-root {
     height: 100vh;
+    height: 100dvh;
     min-height: 0;
     padding: 10px 14px;
     gap: 10px;
