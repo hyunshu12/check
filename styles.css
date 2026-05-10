@@ -1603,3 +1603,147 @@ img {
     grid-template-columns: 1fr;
   }
 }
+
+/* ── Mobile / touch drag (dnd-kit) ─────────────────────────────────── */
+.va-seat,
+.vr-row,
+.vr-name {
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+}
+
+/* DragOverlay 고스트 — 손가락 위로 살짝 띄워서 가리지 않게 */
+.va-drag-ghost {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px 14px;
+  background: var(--bg-panel-strong);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+  font-family: var(--font-ui);
+  color: var(--text-primary);
+  pointer-events: none;
+  transform: translate(0, -32px);
+  white-space: nowrap;
+}
+.va-drag-ghost__hakbun {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.va-drag-ghost__name {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.va-drag-ghost__detail {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+/* 드래그 시작 시 드롭 가능 카드 강조(작은 화면 가시성) */
+.vr-card.is-droppable {
+  border-color: rgba(255, 255, 255, 0.32);
+}
+.vr-card.is-droppable.is-hover {
+  border-color: rgba(255, 255, 255, 0.6);
+  background-color: rgba(255, 255, 255, 0.14);
+}
+
+/* ── 16:9 가로 (태블릿 landscape / 키오스크) 최적화 ───────────────── */
+@media (orientation: landscape) and (max-height: 1100px) {
+  /* viewport 안에 헤더+보드+미니맵 모두 들어가도록 root를 vh에 고정 */
+  .va-root {
+    height: 100vh;
+    min-height: 0;
+    padding: 10px 14px;
+    gap: 10px;
+    overflow: hidden;
+  }
+  .va-hero {
+    padding: 10px 14px;
+    gap: 14px;
+    grid-template-columns: minmax(180px, 1fr) minmax(0, 1.2fr) minmax(280px, auto);
+  }
+  .va-hero__time {
+    font-size: clamp(1.8rem, 3.4vw, 2.6rem);
+  }
+  .va-main {
+    gap: 12px;
+    grid-template-columns: minmax(0, 1.55fr) minmax(300px, 0.85fr);
+    min-height: 0;
+  }
+  .va-board {
+    padding: 12px 14px 14px;
+    gap: 8px;
+  }
+  .va-board__title {
+    font-size: 1.05rem;
+  }
+  .va-board__grid {
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 8px;
+  }
+  .vr-card {
+    padding: 10px 12px;
+    gap: 8px;
+    min-height: 90px;
+  }
+  .vr-card__title {
+    font-size: 0.95rem;
+  }
+  .vr-card__count-num {
+    font-size: 1.2rem;
+  }
+  /* 터치 타겟 ≥ 48px */
+  .vr-row,
+  .vr-name {
+    min-height: 44px;
+    padding: 10px 12px;
+  }
+  .va-mini {
+    padding: 10px 12px;
+    gap: 6px;
+  }
+  .va-mini__grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 4px;
+  }
+  .va-seat {
+    min-height: 44px;
+    padding: 6px 4px;
+  }
+  /* landscape 16:9에서 갤러리가 세로 공간 잡아먹지 않도록 미니맵 우선 */
+  .va-side {
+    grid-template-rows: minmax(0, 1.6fr) minmax(0, 1fr);
+    gap: 10px;
+  }
+  .va-side .gallery-panel {
+    min-height: 0;
+    overflow: hidden;
+  }
+}
+
+/* 720p (1280×720) 등 더 짧은 가로: 갤러리 숨기고 미니맵 풀스크린 */
+@media (orientation: landscape) and (max-height: 720px) {
+  .va-side .gallery-panel {
+    display: none;
+  }
+  .va-side {
+    grid-template-rows: 1fr;
+  }
+}
+
+/* 1024 이하 가로(소형 태블릿 landscape): 보드 컬럼 자동 축소 */
+@media (orientation: landscape) and (max-width: 1024px) and (max-height: 720px) {
+  .va-board__grid {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+  .va-hero {
+    padding: 10px 14px;
+  }
+}

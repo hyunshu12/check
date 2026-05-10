@@ -1,4 +1,5 @@
 import { memo, useCallback, useMemo } from 'react';
+import { useDraggable, useDroppable } from '@dnd-kit/core';
 
 import { reasons, reasonForLocation, type ReasonDef } from '../config/reasons';
 import { MovementMap, Student } from '../types';
@@ -7,12 +8,6 @@ interface ReasonBoardProps {
   students: Student[];
   movementMap: MovementMap;
   dragHakbun: string | null;
-  hoverKey: string | null;
-  onDragOverReason: (reasonKey: string) => void;
-  onDragLeaveReason: (reasonKey: string) => void;
-  onDropReason: (event: React.DragEvent<HTMLElement>, reasonKey: string) => void;
-  onDragStartItem: (event: React.DragEvent<HTMLElement>, hakbun: string) => void;
-  onDragEndItem: () => void;
   onSelectStudent: (student: Student) => void;
 }
 
@@ -29,12 +24,6 @@ export const ReasonBoard = memo(function ReasonBoard({
   students,
   movementMap,
   dragHakbun,
-  hoverKey,
-  onDragOverReason,
-  onDragLeaveReason,
-  onDropReason,
-  onDragStartItem,
-  onDragEndItem,
   onSelectStudent
 }: ReasonBoardProps) {
   const groups = useMemo<Group[]>(() => {
@@ -74,13 +63,7 @@ export const ReasonBoard = memo(function ReasonBoard({
           <ReasonCard
             key={group.key}
             group={group}
-            isHover={hoverKey === group.key}
             isDragging={isDragging}
-            onDragOver={onDragOverReason}
-            onDragLeave={onDragLeaveReason}
-            onDrop={onDropReason}
-            onDragStartItem={onDragStartItem}
-            onDragEndItem={onDragEndItem}
             onSelectStudent={onSelectStudent}
           />
         ))}
@@ -91,68 +74,33 @@ export const ReasonBoard = memo(function ReasonBoard({
 
 interface ReasonCardProps {
   group: Group;
-  isHover: boolean;
   isDragging: boolean;
-  onDragOver: (reasonKey: string) => void;
-  onDragLeave: (reasonKey: string) => void;
-  onDrop: (event: React.DragEvent<HTMLElement>, reasonKey: string) => void;
-  onDragStartItem: (event: React.DragEvent<HTMLElement>, hakbun: string) => void;
-  onDragEndItem: () => void;
   onSelectStudent: (student: Student) => void;
 }
 
 const ReasonCard = memo(function ReasonCard({
   group,
-  isHover,
   isDragging,
-  onDragOver,
-  onDragLeave,
-  onDrop,
-  onDragStartItem,
-  onDragEndItem,
   onSelectStudent
 }: ReasonCardProps) {
   const empty = group.items.length === 0;
   const isEtc = Boolean(group.isEtc);
   const reasonKey = group.key;
 
-  const handleDragOver = useCallback(
-    (event: React.DragEvent<HTMLElement>) => {
-      if (!isDragging) return;
-      event.preventDefault();
-      onDragOver(reasonKey);
-    },
-    [isDragging, onDragOver, reasonKey]
-  );
-
-  const handleDragLeave = useCallback(() => {
-    onDragLeave(reasonKey);
-  }, [onDragLeave, reasonKey]);
-
-  const handleDrop = useCallback(
-    (event: React.DragEvent<HTMLElement>) => {
-      onDrop(event, reasonKey);
-    },
-    [onDrop, reasonKey]
-  );
+  const { setNodeRef, isOver } = useDroppable({ id: `reason:${reasonKey}` });
 
   const className = [
     'vr-card',
     empty ? 'is-empty' : '',
     isEtc ? 'vr-card--etc' : '',
     isDragging ? 'is-droppable' : '',
-    isHover ? 'is-hover' : ''
+    isOver && isDragging ? 'is-hover' : ''
   ]
     .filter(Boolean)
     .join(' ');
 
   return (
-    <article
-      className={className}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-    >
+    <article ref={setNodeRef} className={className}>
       <header className="vr-card__head">
         <h3 className="vr-card__title">{group.label}</h3>
         <div className="vr-card__count">
@@ -162,7 +110,7 @@ const ReasonCard = memo(function ReasonCard({
       </header>
       <div className="vr-card__body">
         {empty ? (
-          <div className="vr-card__empty">{isHover ? '여기에 놓기' : '해당 없음'}</div>
+          <div className="vr-card__empty">{isOver && isDragging ? '여기에 놓기' : '해당 없음'}</div>
         ) : isEtc ? (
           <ul className="vr-list">
             {group.items.map(({ student, detail }) => (
@@ -170,8 +118,6 @@ const ReasonCard = memo(function ReasonCard({
                 key={student.hakbun}
                 student={student}
                 detail={detail}
-                onDragStart={onDragStartItem}
-                onDragEnd={onDragEndItem}
                 onSelect={onSelectStudent}
               />
             ))}
@@ -182,8 +128,6 @@ const ReasonCard = memo(function ReasonCard({
               <ReasonName
                 key={student.hakbun}
                 student={student}
-                onDragStart={onDragStartItem}
-                onDragEnd={onDragEndItem}
                 onSelect={onSelectStudent}
               />
             ))}
@@ -197,25 +141,20 @@ const ReasonCard = memo(function ReasonCard({
 interface ReasonRowProps {
   student: Student;
   detail: string;
-  onDragStart: (event: React.DragEvent<HTMLElement>, hakbun: string) => void;
-  onDragEnd: () => void;
   onSelect: (student: Student) => void;
 }
 
-const ReasonRow = memo(function ReasonRow({ student, detail, onDragStart, onDragEnd, onSelect }: ReasonRowProps) {
-  const handleDragStart = useCallback(
-    (event: React.DragEvent<HTMLElement>) => onDragStart(event, student.hakbun),
-    [onDragStart, student.hakbun]
-  );
+const ReasonRow = memo(function ReasonRow({ student, detail, onSelect }: ReasonRowProps) {
+  const { setNodeRef, attributes, listeners, isDragging } = useDraggable({ id: student.hakbun });
   const handleClick = useCallback(() => onSelect(student), [onSelect, student]);
 
   return (
     <li
-      className="vr-row"
-      draggable
-      onDragStart={handleDragStart}
-      onDragEnd={onDragEnd}
+      ref={setNodeRef}
+      className={`vr-row${isDragging ? ' is-dragging' : ''}`}
       onClick={handleClick}
+      {...listeners}
+      {...attributes}
     >
       <span className="vr-row__name">
         <span className="vr-row__hakbun">{student.hakbun}</span>
@@ -228,25 +167,20 @@ const ReasonRow = memo(function ReasonRow({ student, detail, onDragStart, onDrag
 
 interface ReasonNameProps {
   student: Student;
-  onDragStart: (event: React.DragEvent<HTMLElement>, hakbun: string) => void;
-  onDragEnd: () => void;
   onSelect: (student: Student) => void;
 }
 
-const ReasonName = memo(function ReasonName({ student, onDragStart, onDragEnd, onSelect }: ReasonNameProps) {
-  const handleDragStart = useCallback(
-    (event: React.DragEvent<HTMLElement>) => onDragStart(event, student.hakbun),
-    [onDragStart, student.hakbun]
-  );
+const ReasonName = memo(function ReasonName({ student, onSelect }: ReasonNameProps) {
+  const { setNodeRef, attributes, listeners, isDragging } = useDraggable({ id: student.hakbun });
   const handleClick = useCallback(() => onSelect(student), [onSelect, student]);
 
   return (
     <li
-      className="vr-name"
-      draggable
-      onDragStart={handleDragStart}
-      onDragEnd={onDragEnd}
+      ref={setNodeRef}
+      className={`vr-name${isDragging ? ' is-dragging' : ''}`}
       onClick={handleClick}
+      {...listeners}
+      {...attributes}
     >
       <span className="vr-name__hakbun">{student.hakbun}</span>
       <span className="vr-name__label">{student.name}</span>

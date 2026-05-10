@@ -1,4 +1,5 @@
 import { memo, useCallback } from 'react';
+import { useDraggable, useDroppable } from '@dnd-kit/core';
 
 import { reasonForLocation } from '../config/reasons';
 import { MovementMap, Student } from '../types';
@@ -7,12 +8,6 @@ interface SeatMinimapProps {
   students: Student[];
   movementMap: MovementMap;
   dragHakbun: string | null;
-  isDropHover: boolean;
-  onDragStart: (event: React.DragEvent<HTMLElement>, hakbun: string) => void;
-  onDragEnd: () => void;
-  onDragOver: () => void;
-  onDragLeave: () => void;
-  onDrop: (event: React.DragEvent<HTMLElement>) => void;
   onSelectStudent: (student: Student) => void;
 }
 
@@ -27,32 +22,16 @@ export const SeatMinimap = memo(function SeatMinimap({
   students,
   movementMap,
   dragHakbun,
-  isDropHover,
-  onDragStart,
-  onDragEnd,
-  onDragOver,
-  onDragLeave,
-  onDrop,
   onSelectStudent
 }: SeatMinimapProps) {
+  const { setNodeRef, isOver } = useDroppable({ id: 'seat-return' });
   const isDragging = Boolean(dragHakbun);
-
-  const handleDragOver = useCallback(
-    (event: React.DragEvent<HTMLElement>) => {
-      if (!isDragging) return;
-      event.preventDefault();
-      onDragOver();
-    },
-    [isDragging, onDragOver]
-  );
 
   return (
     <section
-      className={`va-mini${isDropHover ? ' is-drop' : ''}`}
+      ref={setNodeRef}
+      className={`va-mini${isOver && isDragging ? ' is-drop' : ''}`}
       aria-labelledby="seat-mini-title"
-      onDragOver={handleDragOver}
-      onDragLeave={onDragLeave}
-      onDrop={onDrop}
     >
       <div className="va-mini__head">
         <h3 className="va-mini__title" id="seat-mini-title">
@@ -84,9 +63,6 @@ export const SeatMinimap = memo(function SeatMinimap({
               student={student}
               state={state}
               detail={detail}
-              isDragging={dragHakbun === student.hakbun}
-              onDragStart={onDragStart}
-              onDragEnd={onDragEnd}
               onSelect={onSelectStudent}
             />
           );
@@ -100,17 +76,12 @@ interface SeatProps {
   student: Student;
   state: SeatState;
   detail: string | undefined;
-  isDragging: boolean;
-  onDragStart: (event: React.DragEvent<HTMLElement>, hakbun: string) => void;
-  onDragEnd: () => void;
   onSelect: (student: Student) => void;
 }
 
-const Seat = memo(function Seat({ student, state, detail, isDragging, onDragStart, onDragEnd, onSelect }: SeatProps) {
-  const handleDragStart = useCallback(
-    (event: React.DragEvent<HTMLElement>) => onDragStart(event, student.hakbun),
-    [onDragStart, student.hakbun]
-  );
+const Seat = memo(function Seat({ student, state, detail, onSelect }: SeatProps) {
+  const { setNodeRef, attributes, listeners, isDragging } = useDraggable({ id: student.hakbun });
+
   const handleClick = useCallback(() => onSelect(student), [onSelect, student]);
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -124,15 +95,13 @@ const Seat = memo(function Seat({ student, state, detail, isDragging, onDragStar
 
   return (
     <div
+      ref={setNodeRef}
       className={`va-seat va-seat--${state}${isDragging ? ' is-dragging' : ''}`}
       title={`${student.hakbun} ${student.name}${detail ? ` · ${detail}` : ''}`}
-      draggable
-      onDragStart={handleDragStart}
-      onDragEnd={onDragEnd}
       onClick={handleClick}
-      role="button"
-      tabIndex={0}
       onKeyDown={handleKeyDown}
+      {...listeners}
+      {...attributes}
     >
       <span className="va-seat__hakbun">{student.hakbun}</span>
       <span className="va-seat__name">{student.name}</span>

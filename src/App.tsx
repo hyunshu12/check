@@ -1,10 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent
+} from '@dnd-kit/core';
 
 import { DashboardHero } from './components/DashboardHero';
 import { Gallery } from './components/Gallery';
 import { MovementModal } from './components/MovementOverlay';
 import { ReasonBoard } from './components/ReasonBoard';
 import { SeatMinimap } from './components/SeatMinimap';
+import { DragGhost } from './components/DragGhost';
 import { galleryImages, galleryIntervalMs, TOTAL_STUDENTS } from './config/appSettings';
 import { reasons, reasonForLocation } from './config/reasons';
 import { students } from './config/students';
@@ -55,7 +66,6 @@ export default function App() {
   const [isFullscreenSupported, setIsFullscreenSupported] = useState(true);
 
   const [dragHakbun, setDragHakbun] = useState<string | null>(null);
-  const [hoverKey, setHoverKey] = useState<string | null>(null);
   const [modalEtcOpen, setModalEtcOpen] = useState(false);
 
   const movementMapRef = useRef(movementMap);
@@ -260,57 +270,42 @@ export default function App() {
     [openStudentModalForEtc, setMovementMap]
   );
 
-  const onDragStartItem = useCallback(
-    (event: React.DragEvent<HTMLElement>, hakbun: string) => {
-      event.dataTransfer.effectAllowed = 'move';
-      event.dataTransfer.setData('text/hakbun', hakbun);
-      setDragHakbun(hakbun);
-    },
-    []
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { distance: 8 } })
   );
 
-  const onDragEndItem = useCallback(() => {
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    setDragHakbun(String(event.active.id));
+  }, []);
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      setDragHakbun(null);
+      const overId = event.over?.id;
+      if (overId == null) return;
+      const hakbun = String(event.active.id);
+      const overStr = String(overId);
+      if (overStr === 'seat-return') {
+        assignReason(hakbun, RETURN_DROP_KEY);
+        return;
+      }
+      if (overStr.startsWith('reason:')) {
+        assignReason(hakbun, overStr.slice('reason:'.length));
+      }
+    },
+    [assignReason]
+  );
+
+  const handleDragCancel = useCallback(() => {
     setDragHakbun(null);
-    setHoverKey(null);
   }, []);
 
-  const onDragOverReason = useCallback((reasonKey: string) => {
-    setHoverKey(reasonKey);
-  }, []);
-
-  const onDragLeaveReason = useCallback((reasonKey: string) => {
-    setHoverKey((current) => (current === reasonKey ? null : current));
-  }, []);
-
-  const onDropReason = useCallback(
-    (event: React.DragEvent<HTMLElement>, reasonKey: string) => {
-      event.preventDefault();
-      const hakbun = event.dataTransfer.getData('text/hakbun') || dragHakbun;
-      if (hakbun) assignReason(hakbun, reasonKey);
-      setDragHakbun(null);
-      setHoverKey(null);
-    },
-    [assignReason, dragHakbun]
+  const draggedStudent = useMemo(
+    () => (dragHakbun ? students.find((s) => s.hakbun === dragHakbun) ?? null : null),
+    [dragHakbun]
   );
-
-  const onMinimapDragOver = useCallback(() => {
-    setHoverKey(RETURN_DROP_KEY);
-  }, []);
-
-  const onMinimapDragLeave = useCallback(() => {
-    setHoverKey((current) => (current === RETURN_DROP_KEY ? null : current));
-  }, []);
-
-  const onMinimapDrop = useCallback(
-    (event: React.DragEvent<HTMLElement>) => {
-      event.preventDefault();
-      const hakbun = event.dataTransfer.getData('text/hakbun') || dragHakbun;
-      if (hakbun) assignReason(hakbun, RETURN_DROP_KEY);
-      setDragHakbun(null);
-      setHoverKey(null);
-    },
-    [assignReason, dragHakbun]
-  );
+  const draggedDetail = dragHakbun ? movementMap[dragHakbun]?.location : undefined;
 
   useEffect(() => {
     if (!selectedStudent) return;
@@ -502,36 +497,37 @@ export default function App() {
         absent={absentCount}
       />
 
-      <main className="va-main" aria-label="사유 중심 대시보드">
-        <ReasonBoard
-          students={students}
-          movementMap={movementMap}
-          dragHakbun={dragHakbun}
-          hoverKey={hoverKey}
-          onDragOverReason={onDragOverReason}
-          onDragLeaveReason={onDragLeaveReason}
-          onDropReason={onDropReason}
-          onDragStartItem={onDragStartItem}
-          onDragEndItem={onDragEndItem}
-          onSelectStudent={openStudentModal}
-        />
-
-        <aside className="va-side">
-          <SeatMinimap
+      <DndContext
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
+      >
+        <main className="va-main" aria-label="사유 중심 대시보드">
+          <ReasonBoard
             students={students}
             movementMap={movementMap}
             dragHakbun={dragHakbun}
-            isDropHover={hoverKey === RETURN_DROP_KEY}
-            onDragStart={onDragStartItem}
-            onDragEnd={onDragEndItem}
-            onDragOver={onMinimapDragOver}
-            onDragLeave={onMinimapDragLeave}
-            onDrop={onMinimapDrop}
             onSelectStudent={openStudentModal}
           />
-          <Gallery images={galleryImages} intervalMs={galleryIntervalMs} />
-        </aside>
-      </main>
+
+          <aside className="va-side">
+            <SeatMinimap
+              students={students}
+              movementMap={movementMap}
+              dragHakbun={dragHakbun}
+              onSelectStudent={openStudentModal}
+            />
+            <Gallery images={galleryImages} intervalMs={galleryIntervalMs} />
+          </aside>
+        </main>
+
+        <DragOverlay dropAnimation={null}>
+          {draggedStudent ? (
+            <DragGhost student={draggedStudent} detail={draggedDetail} />
+          ) : null}
+        </DragOverlay>
+      </DndContext>
 
       <div className="dashboard-actions">
         <button
