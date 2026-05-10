@@ -145,7 +145,7 @@ interface ReasonRowProps {
 }
 
 const ReasonRow = memo(function ReasonRow({ student, detail, onSelect }: ReasonRowProps) {
-  const { setNodeRef, attributes, listeners, isDragging } = useDraggable({ id: student.hakbun });
+  const { setNodeRef, attributes, listeners, isDragging } = useDraggable({ id: `item:${student.hakbun}` });
   const handleClick = useCallback(() => onSelect(student), [onSelect, student]);
 
   return (
@@ -171,7 +171,7 @@ interface ReasonNameProps {
 }
 
 const ReasonName = memo(function ReasonName({ student, onSelect }: ReasonNameProps) {
-  const { setNodeRef, attributes, listeners, isDragging } = useDraggable({ id: student.hakbun });
+  const { setNodeRef, attributes, listeners, isDragging } = useDraggable({ id: `item:${student.hakbun}` });
   const handleClick = useCallback(() => onSelect(student), [onSelect, student]);
 
   return (

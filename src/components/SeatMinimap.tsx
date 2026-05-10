@@ -80,7 +80,7 @@ interface SeatProps {
 }
 
 const Seat = memo(function Seat({ student, state, detail, onSelect }: SeatProps) {
-  const { setNodeRef, attributes, listeners, isDragging } = useDraggable({ id: student.hakbun });
+  const { setNodeRef, attributes, listeners, isDragging } = useDraggable({ id: `seat:${student.hakbun}` });
 
   const handleClick = useCallback(() => onSelect(student), [onSelect, student]);
   const handleKeyDown = useCallback(
